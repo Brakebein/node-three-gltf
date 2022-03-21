@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "es2020",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "sourceMap": false,
+    "removeComments": false,
+    "allowSyntheticDefaultImports": true,
+    "lib": [
+      "es2018"
+    ]
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
