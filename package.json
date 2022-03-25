@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "npx rollup -c && npx tsc -d --emitDeclarationOnly --declarationDir types",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "repository": {
     "type": "git",
@@ -36,17 +36,18 @@
     "draco3dgltf": "^1.5.2",
     "jimp": "^0.16.1",
     "jsdom": "^19.0.0",
-    "node-fetch": "^3.2.1"
+    "node-fetch": "^3.2.3"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.1.3",
     "@rollup/plugin-typescript": "^8.3.1",
     "@types/jsdom": "^16.2.14",
     "@types/three": "^0.137.0",
-    "rollup": "^2.68.0",
+    "ava": "^4.1.0",
+    "rollup": "^2.70.1",
     "three": "^0.137.0",
     "tslib": "^2.3.1",
-    "typescript": "^4.5.5"
+    "typescript": "^4.6.3"
   },
   "peerDependencies": {
     "three": ">=0.134.0"
