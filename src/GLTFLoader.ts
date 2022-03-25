@@ -62,11 +62,9 @@ import {
 	VectorKeyframeTrack,
 	sRGBEncoding
 } from 'three';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
 import { DRACOLoader } from './DRACOLoader';
 import { FileLoader } from './FileLoader';
 import { TextureLoader } from './TextureLoader';
-import * as buffer from 'buffer';
 
 type ExcludeFunctionProps<T> = Omit<T, { [K in keyof T]-?: T[K] extends Function ? K : never }[keyof T]>;
 
@@ -105,7 +103,7 @@ export interface GLTFLoaderPlugin {
 export class GLTFLoader extends Loader {
 
 	dracoLoader: DRACOLoader = null;
-	ktx2Loader: KTX2Loader = null;
+	ktx2Loader = null;
 	meshoptDecoder = null;
 
 	pluginCallbacks = [];
@@ -272,12 +270,12 @@ export class GLTFLoader extends Loader {
 
 	}
 
-	setKTX2Loader( ktx2Loader: KTX2Loader ): GLTFLoader {
-
-		this.ktx2Loader = ktx2Loader;
-		return this;
-
-	}
+	// setKTX2Loader( ktx2Loader: KTX2Loader ): GLTFLoader {
+	//
+	// 	this.ktx2Loader = ktx2Loader;
+	// 	return this;
+	//
+	// }
 
 	setMeshoptDecoder( meshoptDecoder ): GLTFLoader {
 

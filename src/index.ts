@@ -9,7 +9,7 @@ export * from './TextureLoader';
 export * from './ImageLoader';
 
 /**
- * Load gltf file from local file or web resource and decode/parse content.
+ * Load (draco-compressed) gltf file from local file or web resource and decode/parse content.
  * @param url - Path to gltf file or web resource
  */
 export async function loadGltf(url: string): Promise<GLTF> {
@@ -19,15 +19,7 @@ export async function loadGltf(url: string): Promise<GLTF> {
 
   return new Promise<GLTF>((resolve, reject) => {
 
-    loader.load(url, (gltf) => {
-
-      resolve(gltf);
-
-    }, null, (err) => {
-
-      reject(err);
-
-    });
+    loader.load(url, resolve, null, reject);
 
   });
 

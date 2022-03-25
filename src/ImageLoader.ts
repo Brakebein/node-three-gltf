@@ -10,7 +10,7 @@ export class ImageLoader extends Loader {
 
 	}
 
-	load( url: string, onLoad?: (image) => void, onProgress?: () => void, onError?: (err: Error) => void ) {
+	load( url: string, onLoad?: (image: ArrayBuffer) => void, onProgress?: () => void, onError?: (err: Error) => void ) {
 
 		if ( this.path !== undefined ) url = this.path + url;
 
@@ -31,8 +31,6 @@ export class ImageLoader extends Loader {
 				scope.manager.itemEnd( url );
 
 			}, 0 );
-
-			return cached;
 
 		}
 
