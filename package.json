@@ -1,12 +1,12 @@
 {
   "name": "node-three-gltf",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Use three.js GLTFLoader in a Node.js environment",
   "exports": "./build/index.js",
   "types": "types/index.d.ts",
   "type": "module",
   "engines": {
-    "node": "^12.20.0 || >=14.13.1"
+    "node": ">=16.7.0"
   },
   "scripts": {
     "build": "npx rollup -c && npx tsc -d --emitDeclarationOnly --declarationDir types",
