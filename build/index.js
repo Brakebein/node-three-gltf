@@ -1932,7 +1932,6 @@ class GLTFParser {
         }
         else {
             materialParams.transparent = false;
-            materialParams.alphaWrite = false;
             if (alphaMode === ALPHA_MODES.MASK) {
                 materialParams.alphaTest = materialDef.alphaCutoff !== undefined ? materialDef.alphaCutoff : 0.5;
             }
