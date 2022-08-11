@@ -1,5 +1,4 @@
 import * as fs from 'fs/promises';
-import fetch, { Headers, Request } from 'node-fetch';
 import { Loader, LoadingManager } from 'three';
 
 const loading: {
