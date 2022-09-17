@@ -40,15 +40,15 @@
   },
   "homepage": "https://github.com/Brakebein/node-three-gltf#readme",
   "dependencies": {
-    "draco3dgltf": "^1.5.3",
-    "jimp": "^0.16.1",
-    "jsdom": "^20.0.0"
+    "jsdom": "^20.0.0",
+    "sharp": "^0.31.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.4",
     "@types/draco3dgltf": "^1.4.0",
     "@types/jsdom": "^20.0.0",
+    "@types/sharp": "^0.31.0",
     "@types/three": "^0.137.0",
     "ava": "^4.3.1",
     "rimraf": "^3.0.2",

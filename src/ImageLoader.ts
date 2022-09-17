@@ -1,6 +1,6 @@
 import { resolveObjectURL } from 'node:buffer';
 import { Cache, Loader, LoadingManager } from 'three';
-import Jimp from 'jimp';
+import sharp from 'sharp';
 
 export class ImageLoader extends Loader {
 
@@ -43,20 +43,46 @@ export class ImageLoader extends Loader {
 
 					const blob = resolveObjectURL(url);
 					const imageBuffer = Buffer.from(await blob.arrayBuffer());
-					return Jimp.read(imageBuffer).then(image => image.bitmap) as Promise<ArrayBuffer>;
+					return sharp(imageBuffer);
 
-				} else if (/^data:/.test(url)) {
+				} else if (/^data:/.test(url)) {;
 
-					const imageBuffer =  Buffer.from(url.split(',')[1], 'base64');
-					return Jimp.read(imageBuffer).then(image => image.bitmap) as Promise<ArrayBuffer>;
+					const base64 = url.split(';base64,').pop();
+					const imageBuffer = Buffer.from(base64, 'base64');
+					return sharp(imageBuffer);
+
+				} else if (/^https?:\/\//.test(url)) {
+
+					const req = new Request(url, {
+						headers: new Headers(this.requestHeader),
+						// @ts-ignore
+						credentials: this.withCredentials ? 'include' : 'same-origin',
+						// An abort controller could be added within a future PR
+					});
+
+					const response = await fetch(req);
+					const buffer = Buffer.from(await response.arrayBuffer());
+
+					return sharp(buffer);
 
 				} else {
 
-					return Jimp.read(url).then(image => image.bitmap) as Promise<ArrayBuffer>;
+					// file path
+					return sharp(url);
 
 				}
 
 			})
+			.then(image => image
+					.ensureAlpha()
+					.raw()
+					.toBuffer({ resolveWithObject: true })
+			)
+			.then(({ data, info }) => ({
+				data,
+				width: info.width,
+				height: info.height,
+			} as unknown as ArrayBuffer))
 			.then(data => {
 
 				Cache.add( url, data );
