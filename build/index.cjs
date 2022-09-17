@@ -3,51 +3,31 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var jsdom = require('jsdom');
-var util = require('util');
-var buffer = require('buffer');
-var url = require('url');
-var path = require('path');
+var node_util = require('node:util');
+var node_buffer = require('node:buffer');
+var node_url = require('node:url');
+var node_path = require('node:path');
 var three = require('three');
-var fs = require('fs/promises');
-var Jimp = require('jimp');
-var draco3dgltf = require('draco3dgltf');
+var promises = require('node:fs/promises');
+var sharp = require('sharp');
+var node_worker_threads = require('node:worker_threads');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-function _interopNamespace(e) {
-    if (e && e.__esModule) return e;
-    var n = Object.create(null);
-    if (e) {
-        Object.keys(e).forEach(function (k) {
-            if (k !== 'default') {
-                var d = Object.getOwnPropertyDescriptor(e, k);
-                Object.defineProperty(n, k, d.get ? d : {
-                    enumerable: true,
-                    get: function () { return e[k]; }
-                });
-            }
-        });
-    }
-    n["default"] = e;
-    return Object.freeze(n);
-}
-
-var path__namespace = /*#__PURE__*/_interopNamespace(path);
-var fs__namespace = /*#__PURE__*/_interopNamespace(fs);
-var Jimp__default = /*#__PURE__*/_interopDefaultLegacy(Jimp);
+var sharp__default = /*#__PURE__*/_interopDefaultLegacy(sharp);
 
 const dom = new jsdom.JSDOM().window;
 if (!global.DOMParser) {
     global.DOMParser = dom.DOMParser;
 }
 if (!global.Blob) {
-    global.Blob = buffer.Blob;
+    global.Blob = node_buffer.Blob;
 }
 if (!global.URL) {
-    global.URL = url.URL;
+    global.URL = node_url.URL;
 }
 if (!global.TextDecoder) {
-    global.TextDecoder = util.TextDecoder;
+    global.TextDecoder = node_util.TextDecoder;
 }
 
 const loading = {};
@@ -79,7 +59,7 @@ class FileLoader extends three.Loader {
         const responseType = this.responseType;
         let promise;
         if (!/^https?:\/\//.test(url) && !/^data:/.test(url)) {
-            promise = fs__namespace.readFile(url)
+            promise = promises.readFile(url)
                 .then(buffer => {
                 switch (responseType) {
                     case 'arraybuffer':
@@ -99,6 +79,11 @@ class FileLoader extends three.Loader {
                         return buffer.toString();
                 }
             });
+        }
+        else if (/^data:application\/octet-stream;base64,/.test(url)) {
+            const base64 = url.split(';base64,').pop();
+            const buffer = Buffer.from(base64, 'base64');
+            promise = Promise.resolve(buffer.buffer);
         }
         else {
             const req = new Request(url, {
@@ -206,18 +191,37 @@ class ImageLoader extends three.Loader {
         Promise.resolve()
             .then(async () => {
             if (/^blob:.*$/i.test(url)) {
-                const blob = buffer.resolveObjectURL(url);
+                const blob = node_buffer.resolveObjectURL(url);
                 const imageBuffer = Buffer.from(await blob.arrayBuffer());
-                return Jimp__default["default"].read(imageBuffer).then(image => image.bitmap);
+                return sharp__default["default"](imageBuffer);
             }
             else if (/^data:/.test(url)) {
-                const imageBuffer = Buffer.from(url.split(',')[1], 'base64');
-                return Jimp__default["default"].read(imageBuffer).then(image => image.bitmap);
+                const base64 = url.split(';base64,').pop();
+                const imageBuffer = Buffer.from(base64, 'base64');
+                return sharp__default["default"](imageBuffer);
+            }
+            else if (/^https?:\/\//.test(url)) {
+                const req = new Request(url, {
+                    headers: new Headers(this.requestHeader),
+                    credentials: this.withCredentials ? 'include' : 'same-origin',
+                });
+                const response = await fetch(req);
+                const buffer = Buffer.from(await response.arrayBuffer());
+                return sharp__default["default"](buffer);
             }
             else {
-                return Jimp__default["default"].read(url).then(image => image.bitmap);
+                return sharp__default["default"](url);
             }
         })
+            .then(image => image
+            .ensureAlpha()
+            .raw()
+            .toBuffer({ resolveWithObject: true }))
+            .then(({ data, info }) => ({
+            data,
+            width: info.width,
+            height: info.height,
+        }))
             .then(data => {
             three.Cache.add(url, data);
             if (onLoad)
@@ -302,7 +306,7 @@ class GLTFLoader extends three.Loader {
         }
         else {
             if (!/^https?:\/\//.test(url) && !/^data:/.test(url)) {
-                resourcePath = path__namespace.dirname(url) + path__namespace.sep;
+                resourcePath = node_path.dirname(url) + node_path.sep;
             }
             else {
                 resourcePath = three.LoaderUtils.extractUrlBase(url);
@@ -943,7 +947,6 @@ class GLTFDracoMeshCompressionExtension {
         const gltfAttributeMap = primitive.extensions[this.name].attributes;
         const threeAttributeMap = {};
         const attributeNormalizedMap = {};
-        const attributeTypeMap = {};
         for (const attributeName in gltfAttributeMap) {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             threeAttributeMap[threeAttributeName] = gltfAttributeMap[attributeName];
@@ -952,8 +955,7 @@ class GLTFDracoMeshCompressionExtension {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             if (gltfAttributeMap[attributeName] !== undefined) {
                 const accessorDef = json.accessors[primitive.attributes[attributeName]];
-                const componentType = WEBGL_COMPONENT_TYPES[accessorDef.componentType];
-                attributeTypeMap[threeAttributeName] = componentType;
+                WEBGL_COMPONENT_TYPES[accessorDef.componentType];
                 attributeNormalizedMap[threeAttributeName] = accessorDef.normalized === true;
             }
         }
@@ -967,7 +969,7 @@ class GLTFDracoMeshCompressionExtension {
                             attribute.normalized = normalized;
                     }
                     resolve(geometry);
-                }, threeAttributeMap, attributeTypeMap);
+                }, threeAttributeMap);
             });
         });
     }
@@ -2574,7 +2576,13 @@ const _taskCache = new WeakMap();
 class DRACOLoader extends three.Loader {
     constructor(manager) {
         super(manager);
+        this.decoderPath = node_path.dirname(node_url.fileURLToPath((typeof document === 'undefined' ? new (require('u' + 'rl').URL)('file:' + __filename).href : (document.currentScript && document.currentScript.src || new URL('index.cjs', document.baseURI).href)))) + node_path.sep;
         this.decoderConfig = {};
+        this.decoderPending = null;
+        this.workerLimit = 4;
+        this.workerPool = [];
+        this.workerNextTaskID = 1;
+        this.workerSourceURL = '';
         this.defaultAttributeIDs = {
             position: 'POSITION',
             normal: 'NORMAL',
@@ -2590,6 +2598,10 @@ class DRACOLoader extends three.Loader {
     }
     setDecoderConfig(config) {
         this.decoderConfig = config;
+        return this;
+    }
+    setWorkerLimit(workerLimit) {
+        this.workerLimit = workerLimit;
         return this;
     }
     load(url, onLoad, onProgress, onError) {
@@ -2618,12 +2630,6 @@ class DRACOLoader extends three.Loader {
         this.decodeGeometry(buffer, taskConfig).then(callback);
     }
     decodeGeometry(buffer, taskConfig) {
-        for (const attribute of Object.keys(taskConfig.attributeTypes)) {
-            const type = taskConfig.attributeTypes[attribute];
-            if (type.BYTES_PER_ELEMENT !== undefined) {
-                taskConfig.attributeTypes[attribute] = type.name;
-            }
-        }
         const taskKey = JSON.stringify(taskConfig);
         if (_taskCache.has(buffer)) {
             const cachedTask = _taskCache.get(buffer);
@@ -2635,25 +2641,23 @@ class DRACOLoader extends three.Loader {
                     'settings. Buffer has already been transferred.');
             }
         }
-        const geometryPending = new Promise(async (resolve, reject) => {
-            const draco = await draco3dgltf.createDecoderModule(this.decoderConfig);
-            const decoder = new draco.Decoder();
-            const decoderBuffer = new draco.DecoderBuffer();
-            decoderBuffer.Init(new Int8Array(buffer), buffer.byteLength);
-            try {
-                const geometry = decodeGeometry(draco, decoder, decoderBuffer, taskConfig);
-                const buffers = geometry.attributes.map((attr) => attr.array.buffer);
-                if (geometry.index)
-                    buffers.push(geometry.index.array.buffer);
-                resolve(this._createGeometry(geometry));
-            }
-            catch (error) {
-                console.error(error);
-                reject(error);
-            }
-            finally {
-                draco.destroy(decoderBuffer);
-                draco.destroy(decoder);
+        let worker;
+        const taskID = this.workerNextTaskID++;
+        const taskCost = buffer.byteLength;
+        const geometryPending = this._getWorker(taskID, taskCost)
+            .then((_worker) => {
+            worker = _worker;
+            return new Promise((resolve, reject) => {
+                worker._callbacks[taskID] = { resolve, reject };
+                worker.postMessage({ type: 'decode', id: taskID, taskConfig, buffer }, [buffer]);
+            });
+        })
+            .then((message) => this._createGeometry(message.geometry));
+        geometryPending
+            .catch(() => true)
+            .then(() => {
+            if (worker && taskID) {
+                this._releaseTask(worker, taskID);
             }
         });
         _taskCache.set(buffer, {
@@ -2676,87 +2680,79 @@ class DRACOLoader extends three.Loader {
         return geometry;
     }
     preload() {
+        this._initDecoder();
         return this;
     }
-}
-function decodeGeometry(draco, decoder, decoderBuffer, taskConfig) {
-    const attributeIDs = taskConfig.attributeIDs;
-    const attributeTypes = taskConfig.attributeTypes;
-    let dracoGeometry;
-    let decodingStatus;
-    const geometryType = decoder.GetEncodedGeometryType(decoderBuffer);
-    if (geometryType === draco.TRIANGULAR_MESH) {
-        dracoGeometry = new draco.Mesh();
-        decodingStatus = decoder.DecodeBufferToMesh(decoderBuffer, dracoGeometry);
+    _loadLibrary(url, responseType) {
+        const loader = new FileLoader(this.manager);
+        loader.setPath(this.decoderPath);
+        loader.setResponseType(responseType);
+        loader.setWithCredentials(this.withCredentials);
+        return new Promise((resolve, reject) => {
+            loader.load(url, resolve, undefined, reject);
+        });
     }
-    else if (geometryType === draco.POINT_CLOUD) {
-        dracoGeometry = new draco.PointCloud();
-        decodingStatus = decoder.DecodeBufferToPointCloud(decoderBuffer, dracoGeometry);
-    }
-    else {
-        throw new Error('THREE.DRACOLoader: Unexpected geometry type.');
-    }
-    if (!decodingStatus.ok() || dracoGeometry.ptr === 0) {
-        throw new Error('THREE.DRACOLoader: Decoding failed: ' + decodingStatus.error_msg());
-    }
-    const geometry = { index: null, attributes: [] };
-    for (const attributeName of Object.keys(attributeIDs)) {
-        const attributeType = global[attributeTypes[attributeName]];
-        let attribute;
-        let attributeID;
-        if (taskConfig.useUniqueIDs) {
-            attributeID = attributeIDs[attributeName];
-            attribute = decoder.GetAttributeByUniqueId(dracoGeometry, attributeID);
+    _initDecoder() {
+        if (this.decoderPending)
+            return this.decoderPending;
+        const useJS = typeof WebAssembly !== 'object' || this.decoderConfig.type === 'js';
+        if (useJS) {
+            this.workerSourceURL = this.decoderPath + 'draco_worker.js';
+            this.decoderPending = Promise.resolve();
         }
         else {
-            attributeID = decoder.GetAttributeId(dracoGeometry, draco[attributeIDs[attributeName]]);
-            if (attributeID === -1)
-                continue;
-            attribute = decoder.GetAttribute(dracoGeometry, attributeID);
+            this.workerSourceURL = this.decoderPath + 'draco_worker_wasm.js';
+            this.decoderPending = this._loadLibrary('draco_decoder.wasm', 'arraybuffer')
+                .then((wasmBinary) => {
+                this.decoderConfig.wasmBinary = wasmBinary;
+            });
         }
-        geometry.attributes.push(decodeAttribute(draco, decoder, dracoGeometry, attributeName, attributeType, attribute));
+        return this.decoderPending;
     }
-    if (geometryType === draco.TRIANGULAR_MESH) {
-        geometry.index = decodeIndex(draco, decoder, dracoGeometry);
+    _getWorker(taskID, taskCost) {
+        return this._initDecoder().then(() => {
+            if (this.workerPool.length < this.workerLimit) {
+                const worker = new node_worker_threads.Worker(this.workerSourceURL);
+                worker._callbacks = {};
+                worker._taskCosts = {};
+                worker._taskLoad = 0;
+                worker.postMessage({ type: 'init', decoderConfig: this.decoderConfig });
+                worker.on('message', (message) => {
+                    switch (message.type) {
+                        case 'decode':
+                            worker._callbacks[message.id].resolve(message);
+                            break;
+                        case 'error':
+                            worker._callbacks[message.id].reject(message);
+                            break;
+                        default:
+                            console.error('THREE.DRACOLoader: Unexpected message, "' + message.type + '"');
+                    }
+                });
+                this.workerPool.push(worker);
+            }
+            else {
+                this.workerPool.sort(function (a, b) {
+                    return a._taskLoad > b._taskLoad ? -1 : 1;
+                });
+            }
+            const worker = this.workerPool[this.workerPool.length - 1];
+            worker._taskCosts[taskID] = taskCost;
+            worker._taskLoad += taskCost;
+            return worker;
+        });
     }
-    draco.destroy(dracoGeometry);
-    return geometry;
-}
-function decodeIndex(draco, decoder, dracoGeometry) {
-    const numFaces = dracoGeometry.num_faces();
-    const numIndices = numFaces * 3;
-    const byteLength = numIndices * 4;
-    const ptr = draco._malloc(byteLength);
-    decoder.GetTrianglesUInt32Array(dracoGeometry, byteLength, ptr);
-    const index = new Uint32Array(draco.HEAPF32.buffer, ptr, numIndices).slice();
-    draco._free(ptr);
-    return { array: index, itemSize: 1 };
-}
-function decodeAttribute(draco, decoder, dracoGeometry, attributeName, attributeType, attribute) {
-    const numComponents = attribute.num_components();
-    const numPoints = dracoGeometry.num_points();
-    const numValues = numPoints * numComponents;
-    const byteLength = numValues * attributeType.BYTES_PER_ELEMENT;
-    const dataType = getDracoDataType(draco, attributeType);
-    const ptr = draco._malloc(byteLength);
-    decoder.GetAttributeDataArrayForAllPoints(dracoGeometry, attribute, dataType, byteLength, ptr);
-    const array = new attributeType(draco.HEAPF32.buffer, ptr, numValues).slice();
-    draco._free(ptr);
-    return {
-        name: attributeName,
-        array,
-        itemSize: numComponents
-    };
-}
-function getDracoDataType(draco, attributeType) {
-    switch (attributeType) {
-        case Float32Array: return draco.DT_FLOAT32;
-        case Int8Array: return draco.DT_INT8;
-        case Int16Array: return draco.DT_INT16;
-        case Int32Array: return draco.DT_INT32;
-        case Uint8Array: return draco.DT_UINT8;
-        case Uint16Array: return draco.DT_UINT16;
-        case Uint32Array: return draco.DT_UINT32;
+    _releaseTask(worker, taskID) {
+        worker._taskLoad -= worker._taskCosts[taskID];
+        delete worker._callbacks[taskID];
+        delete worker._taskCosts[taskID];
+    }
+    dispose() {
+        for (let i = 0; i < this.workerPool.length; ++i) {
+            this.workerPool[i].terminate();
+        }
+        this.workerPool.length = 0;
+        return this;
     }
 }
 
@@ -2774,3 +2770,4 @@ exports.GLTFLoader = GLTFLoader;
 exports.ImageLoader = ImageLoader;
 exports.TextureLoader = TextureLoader;
 exports.loadGltf = loadGltf;
+//# sourceMappingURL=index.cjs.map
