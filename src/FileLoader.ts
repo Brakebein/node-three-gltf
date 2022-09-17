@@ -1,4 +1,4 @@
-import * as fs from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 import { Loader, LoadingManager } from 'three';
 
 const loading: {
@@ -59,7 +59,7 @@ export class FileLoader extends Loader {
 
     if (!/^https?:\/\//.test(url) && !/^data:/.test(url)) {
 
-      promise = fs.readFile(url)
+      promise = readFile(url)
         .then(buffer => {
 
           switch (responseType) {
@@ -87,6 +87,13 @@ export class FileLoader extends Loader {
           }
 
         });
+
+    } else if (/^data:application\/octet-stream;base64,/.test(url)) {
+
+      const base64 = url.split(';base64,').pop();
+      const buffer = Buffer.from(base64, 'base64');
+
+      promise = Promise.resolve(buffer.buffer);
 
     } else {
 

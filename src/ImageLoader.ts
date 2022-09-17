@@ -1,4 +1,4 @@
-import { resolveObjectURL } from 'buffer';
+import { resolveObjectURL } from 'node:buffer';
 import { Cache, Loader, LoadingManager } from 'three';
 import Jimp from 'jimp';
 

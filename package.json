@@ -12,7 +12,11 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "npx rollup -c && npx tsc -d --emitDeclarationOnly --declarationDir types",
+    "cleanup:build": "rimraf build",
+    "prebuild": "npm run cleanup:build",
+    "build": "npx rollup -c && npm run build:types && npm run build:workers",
+    "build:types": "npx tsc -d --emitDeclarationOnly --declarationDir types",
+    "build:workers": "node build-workers.js",
     "test": "ava"
   },
   "repository": {
@@ -47,7 +51,9 @@
     "@types/jsdom": "^20.0.0",
     "@types/three": "^0.137.0",
     "ava": "^4.3.1",
+    "rimraf": "^3.0.2",
     "rollup": "^2.77.3",
+    "rollup-plugin-copy": "^3.4.0",
     "three": "^0.137.0",
     "tslib": "^2.3.1",
     "typescript": "^4.6.3"

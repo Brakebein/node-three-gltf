@@ -1,16 +1,25 @@
+import { fileURLToPath } from 'node:url';
+import { dirname, sep } from 'node:path';
+import { Worker } from 'node:worker_threads';
 import {
 	BufferAttribute,
 	BufferGeometry,
 	Loader, LoadingManager
 } from 'three';
-import { createDecoderModule } from 'draco3dgltf';
 import { FileLoader } from './FileLoader';
 
 const _taskCache = new WeakMap();
 
 export class DRACOLoader extends Loader {
 
-	decoderConfig = {};
+	decoderPath = dirname(fileURLToPath(import.meta.url)) + sep;
+	decoderConfig: { [key: string]: any } = {};
+	decoderPending = null;
+
+	workerLimit = 4;
+	workerPool = [];
+	workerNextTaskID = 1;
+	workerSourceURL = '';
 
 	defaultAttributeIDs = {
 		position: 'POSITION',
@@ -34,6 +43,14 @@ export class DRACOLoader extends Loader {
 	setDecoderConfig( config: object ) {
 
 		this.decoderConfig = config;
+
+		return this;
+
+	}
+
+	setWorkerLimit( workerLimit: number ) {
+
+		this.workerLimit = workerLimit;
 
 		return this;
 
@@ -65,7 +82,6 @@ export class DRACOLoader extends Loader {
 
 	}
 
-	/** @deprecated Kept for backward-compatibility with previous DRACOLoader versions. */
 	decodeDracoFile( buffer: ArrayBuffer, callback: (geometry: BufferGeometry) => void, attributeIDs?, attributeTypes? ) {
 
 		const taskConfig = {
@@ -79,23 +95,6 @@ export class DRACOLoader extends Loader {
 	}
 
 	decodeGeometry( buffer: ArrayBuffer, taskConfig ): Promise<BufferGeometry> {
-
-		// TODO: For backward-compatibility, support 'attributeTypes' objects containing
-		// references (rather than names) to typed array constructors. These must be
-		// serialized before sending them to the worker.
-		for ( const attribute of Object.keys(taskConfig.attributeTypes) ) {
-
-			const type = taskConfig.attributeTypes[ attribute ];
-
-			if ( type.BYTES_PER_ELEMENT !== undefined ) {
-
-				taskConfig.attributeTypes[ attribute ] = type.name;
-
-			}
-
-		}
-
-		//
 
 		const taskKey = JSON.stringify( taskConfig );
 
@@ -126,37 +125,45 @@ export class DRACOLoader extends Loader {
 
 		}
 
-		const geometryPending = new Promise<BufferGeometry>(async (resolve, reject) => {
+		let worker;
+		const taskID = this.workerNextTaskID ++;
+		const taskCost = buffer.byteLength;
 
-			const draco = await createDecoderModule(this.decoderConfig);
-			const decoder = new draco.Decoder();
-			const decoderBuffer = new draco.DecoderBuffer();
-			decoderBuffer.Init( new Int8Array( buffer ), buffer.byteLength );
+		// Obtain a worker and assign a task, and construct a geometry instance
+		// when the task completes.
+		const geometryPending = this._getWorker( taskID, taskCost )
+			.then( ( _worker ) => {
 
-			try {
+				worker = _worker;
 
-				const geometry = decodeGeometry( draco, decoder, decoderBuffer, taskConfig );
+				return new Promise( ( resolve, reject ) => {
 
-				const buffers = geometry.attributes.map( ( attr ) => attr.array.buffer );
+					worker._callbacks[ taskID ] = { resolve, reject };
 
-				if ( geometry.index ) buffers.push( geometry.index.array.buffer );
+					worker.postMessage( { type: 'decode', id: taskID, taskConfig, buffer }, [ buffer ] );
 
-				resolve( this._createGeometry( geometry ) );
+					// this.debug();
 
-			} catch ( error ) {
+				} );
 
-				console.error( error );
+			} )
+			.then( ( message ) => this._createGeometry( message.geometry ) );
 
-				reject( error );
+		// Remove task from the task list.
+		// Note: replaced '.finally()' with '.catch().then()' block - iOS 11 support (#19416)
+		geometryPending
+			.catch( () => true )
+			.then( () => {
 
-			} finally {
+				if ( worker && taskID ) {
 
-				draco.destroy( decoderBuffer );
-				draco.destroy( decoder );
+					this._releaseTask( worker, taskID );
 
-			}
+					// this.debug();
 
-		});
+				}
+
+			} );
 
 		// Cache the task result.
 		_taskCache.set( buffer, {
@@ -194,139 +201,136 @@ export class DRACOLoader extends Loader {
 
 	}
 
-	preload(): DRACOLoader {
+	preload() {
+
+		this._initDecoder();
 
 		return this;
 
 	}
 
-}
+	_loadLibrary(url: string, responseType: string) {
 
-function decodeGeometry( draco, decoder, decoderBuffer, taskConfig ) {
+		const loader = new FileLoader( this.manager );
+		loader.setPath( this.decoderPath );
+		loader.setResponseType( responseType );
+		loader.setWithCredentials( this.withCredentials );
 
-	const attributeIDs = taskConfig.attributeIDs;
-	const attributeTypes = taskConfig.attributeTypes;
+		return new Promise(( resolve, reject ) => {
 
-	let dracoGeometry;
-	let decodingStatus;
+			loader.load( url, resolve, undefined, reject );
 
-	const geometryType = decoder.GetEncodedGeometryType( decoderBuffer );
-
-	if ( geometryType === draco.TRIANGULAR_MESH ) {
-
-		dracoGeometry = new draco.Mesh();
-		decodingStatus = decoder.DecodeBufferToMesh( decoderBuffer, dracoGeometry );
-
-	} else if ( geometryType === draco.POINT_CLOUD ) {
-
-		dracoGeometry = new draco.PointCloud();
-		decodingStatus = decoder.DecodeBufferToPointCloud( decoderBuffer, dracoGeometry );
-
-	} else {
-
-		throw new Error( 'THREE.DRACOLoader: Unexpected geometry type.' );
+		});
 
 	}
 
-	if ( ! decodingStatus.ok() || dracoGeometry.ptr === 0 ) {
+	_initDecoder() {
 
-		throw new Error( 'THREE.DRACOLoader: Decoding failed: ' + decodingStatus.error_msg() );
+		if ( this.decoderPending ) return this.decoderPending;
 
-	}
+		const useJS = typeof WebAssembly !== 'object' || this.decoderConfig.type === 'js';
 
-	const geometry = { index: null, attributes: [] };
+		if ( useJS ) {
 
-	// Gather all vertex attributes.
-	for ( const attributeName of Object.keys(attributeIDs) ) {
+			this.workerSourceURL = this.decoderPath + 'draco_worker.js';
 
-		const attributeType = global[ attributeTypes[ attributeName ] ];
-
-		let attribute;
-		let attributeID;
-
-		// A Draco file may be created with default vertex attributes, whose attribute IDs
-		// are mapped 1:1 from their semantic name (POSITION, NORMAL, ...). Alternatively,
-		// a Draco file may contain a custom set of attributes, identified by known unique
-		// IDs. glTF files always do the latter, and `.drc` files typically do the former.
-		if ( taskConfig.useUniqueIDs ) {
-
-			attributeID = attributeIDs[ attributeName ];
-			attribute = decoder.GetAttributeByUniqueId( dracoGeometry, attributeID );
+			this.decoderPending = Promise.resolve();
 
 		} else {
 
-			attributeID = decoder.GetAttributeId( dracoGeometry, draco[ attributeIDs[ attributeName ] ] );
+			this.workerSourceURL = this.decoderPath + 'draco_worker_wasm.js';
 
-			if ( attributeID === - 1 ) continue;
+			this.decoderPending = this._loadLibrary( 'draco_decoder.wasm', 'arraybuffer' )
+				.then( ( wasmBinary ) => {
 
-			attribute = decoder.GetAttribute( dracoGeometry, attributeID );
+					this.decoderConfig.wasmBinary = wasmBinary;
+
+				} );
 
 		}
 
-		geometry.attributes.push( decodeAttribute( draco, decoder, dracoGeometry, attributeName, attributeType, attribute ) );
+		return this.decoderPending;
 
 	}
 
-	// Add index.
-	if ( geometryType === draco.TRIANGULAR_MESH ) {
+	_getWorker( taskID, taskCost ) {
 
-		geometry.index = decodeIndex( draco, decoder, dracoGeometry );
+		return this._initDecoder().then( () => {
+
+			if ( this.workerPool.length < this.workerLimit ) {
+
+				const worker = new Worker( this.workerSourceURL );
+
+				// @ts-ignore
+				worker._callbacks = {};
+				// @ts-ignore
+				worker._taskCosts = {};
+				// @ts-ignore
+				worker._taskLoad = 0;
+
+				worker.postMessage( { type: 'init', decoderConfig: this.decoderConfig } );
+
+				worker.on('message', ( message ) => {
+
+					switch ( message.type ) {
+
+						case 'decode':
+							// @ts-ignore
+							worker._callbacks[ message.id ].resolve( message );
+							break;
+
+						case 'error':
+							// @ts-ignore
+							worker._callbacks[ message.id ].reject( message );
+							break;
+
+						default:
+							console.error( 'THREE.DRACOLoader: Unexpected message, "' + message.type + '"' );
+
+					}
+
+				} );
+
+				this.workerPool.push( worker );
+
+			} else {
+
+				this.workerPool.sort( function ( a, b ) {
+
+					return a._taskLoad > b._taskLoad ? - 1 : 1;
+
+				} );
+
+			}
+
+			const worker = this.workerPool[ this.workerPool.length - 1 ];
+			worker._taskCosts[ taskID ] = taskCost;
+			worker._taskLoad += taskCost;
+			return worker;
+
+		} );
 
 	}
 
-	draco.destroy( dracoGeometry );
+	_releaseTask( worker, taskID ) {
 
-	return geometry;
+		worker._taskLoad -= worker._taskCosts[ taskID ];
+		delete worker._callbacks[ taskID ];
+		delete worker._taskCosts[ taskID ];
 
-}
+	}
 
-function decodeIndex( draco, decoder, dracoGeometry ) {
+	dispose() {
 
-	const numFaces = dracoGeometry.num_faces();
-	const numIndices = numFaces * 3;
-	const byteLength = numIndices * 4;
+		for ( let i = 0; i < this.workerPool.length; ++ i ) {
 
-	const ptr = draco._malloc( byteLength );
-	decoder.GetTrianglesUInt32Array( dracoGeometry, byteLength, ptr );
-	const index = new Uint32Array( draco.HEAPF32.buffer, ptr, numIndices ).slice();
-	draco._free( ptr );
+			this.workerPool[ i ].terminate();
 
-	return { array: index, itemSize: 1 };
+		}
 
-}
+		this.workerPool.length = 0;
 
-function decodeAttribute( draco, decoder, dracoGeometry, attributeName, attributeType, attribute ) {
-
-	const numComponents = attribute.num_components();
-	const numPoints = dracoGeometry.num_points();
-	const numValues = numPoints * numComponents;
-	const byteLength = numValues * attributeType.BYTES_PER_ELEMENT;
-	const dataType = getDracoDataType( draco, attributeType );
-
-	const ptr = draco._malloc( byteLength );
-	decoder.GetAttributeDataArrayForAllPoints( dracoGeometry, attribute, dataType, byteLength, ptr );
-	const array = new attributeType( draco.HEAPF32.buffer, ptr, numValues ).slice();
-	draco._free( ptr );
-
-	return {
-		name: attributeName,
-		array,
-		itemSize: numComponents
-	};
-
-}
-
-function getDracoDataType( draco, attributeType ) {
-
-	switch ( attributeType ) {
-
-		case Float32Array: return draco.DT_FLOAT32;
-		case Int8Array: return draco.DT_INT8;
-		case Int16Array: return draco.DT_INT16;
-		case Int32Array: return draco.DT_INT32;
-		case Uint8Array: return draco.DT_UINT8;
-		case Uint16Array: return draco.DT_UINT16;
-		case Uint32Array: return draco.DT_UINT32;
+		return this;
 
 	}
 

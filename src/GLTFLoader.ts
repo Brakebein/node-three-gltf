@@ -1,4 +1,4 @@
-import * as path from 'path';
+import { dirname, sep } from 'node:path';
 import {
 	AnimationClip,
 	Bone,
@@ -192,7 +192,7 @@ export class GLTFLoader extends Loader {
 
 			if (!/^https?:\/\//.test(url) && !/^data:/.test(url)) {
 
-				resourcePath = path.dirname(url) + path.sep;
+				resourcePath = dirname(url) + sep;
 
 			} else {
 
@@ -1451,7 +1451,7 @@ class GLTFDracoMeshCompressionExtension {
 
 					resolve( geometry );
 
-				}, threeAttributeMap, attributeTypeMap );
+				}, threeAttributeMap );
 
 			} );
 
