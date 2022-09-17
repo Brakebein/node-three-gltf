@@ -1,6 +1,14 @@
 import { BufferGeometry, Loader, LoadingManager } from 'three';
 export declare class DRACOLoader extends Loader {
-    decoderConfig: {};
+    decoderPath: string;
+    decoderConfig: {
+        [key: string]: any;
+    };
+    decoderPending: any;
+    workerLimit: number;
+    workerPool: any[];
+    workerNextTaskID: number;
+    workerSourceURL: string;
     defaultAttributeIDs: {
         position: string;
         normal: string;
@@ -15,10 +23,15 @@ export declare class DRACOLoader extends Loader {
     };
     constructor(manager?: LoadingManager);
     setDecoderConfig(config: object): this;
+    setWorkerLimit(workerLimit: number): this;
     load(url: string, onLoad: (geometry: BufferGeometry) => void, onProgress?: () => void, onError?: (err: Error) => void): void;
-    /** @deprecated Kept for backward-compatibility with previous DRACOLoader versions. */
     decodeDracoFile(buffer: ArrayBuffer, callback: (geometry: BufferGeometry) => void, attributeIDs?: any, attributeTypes?: any): void;
     decodeGeometry(buffer: ArrayBuffer, taskConfig: any): Promise<BufferGeometry>;
     _createGeometry(geometryData: any): BufferGeometry;
-    preload(): DRACOLoader;
+    preload(): this;
+    _loadLibrary(url: string, responseType: string): Promise<unknown>;
+    _initDecoder(): any;
+    _getWorker(taskID: any, taskCost: any): any;
+    _releaseTask(worker: any, taskID: any): void;
+    dispose(): this;
 }

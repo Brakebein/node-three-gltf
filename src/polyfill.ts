@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
-import { TextDecoder } from 'util';
-import { Blob } from 'buffer';
-import { URL } from 'url';
+import { TextDecoder } from 'node:util';
+import { Blob } from 'node:buffer';
+import { URL } from 'node:url';
 
 const dom = new JSDOM().window;
 
