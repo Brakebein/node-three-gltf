@@ -1,6 +1,6 @@
 {
   "name": "node-three-gltf",
-  "version": "1.2.0",
+  "version": "1.2.0-node16",
   "description": "Use three.js GLTFLoader in a Node.js environment",
   "exports": {
     "import": "./build/index.js",
