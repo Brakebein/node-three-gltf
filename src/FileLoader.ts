@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { Loader, LoadingManager } from 'three';
+import fetch, { Headers, Request } from 'node-fetch';
 
 const loading: {
   [key: string]: {

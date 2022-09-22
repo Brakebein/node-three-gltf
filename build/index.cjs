@@ -9,11 +9,13 @@ var node_url = require('node:url');
 var node_path = require('node:path');
 var three = require('three');
 var promises = require('node:fs/promises');
+var fetch = require('node-fetch');
 var sharp = require('sharp');
 var node_worker_threads = require('node:worker_threads');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
+var fetch__default = /*#__PURE__*/_interopDefaultLegacy(fetch);
 var sharp__default = /*#__PURE__*/_interopDefaultLegacy(sharp);
 
 const dom = new jsdom.JSDOM().window;
@@ -86,11 +88,11 @@ class FileLoader extends three.Loader {
             promise = Promise.resolve(buffer.buffer);
         }
         else {
-            const req = new Request(url, {
-                headers: new Headers(this.requestHeader),
+            const req = new fetch.Request(url, {
+                headers: new fetch.Headers(this.requestHeader),
                 credentials: this.withCredentials ? 'include' : 'same-origin',
             });
-            promise = fetch(req)
+            promise = fetch__default["default"](req)
                 .then(response => {
                 if (response.status === 200 || response.status === 0) {
                     if (response.status === 0) {
@@ -201,11 +203,11 @@ class ImageLoader extends three.Loader {
                 return sharp__default["default"](imageBuffer);
             }
             else if (/^https?:\/\//.test(url)) {
-                const req = new Request(url, {
-                    headers: new Headers(this.requestHeader),
+                const req = new fetch.Request(url, {
+                    headers: new fetch.Headers(this.requestHeader),
                     credentials: this.withCredentials ? 'include' : 'same-origin',
                 });
-                const response = await fetch(req);
+                const response = await fetch__default["default"](req);
                 const buffer = Buffer.from(await response.arrayBuffer());
                 return sharp__default["default"](buffer);
             }
