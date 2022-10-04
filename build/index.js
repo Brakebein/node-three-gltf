@@ -5,6 +5,7 @@ import { URL, fileURLToPath } from 'node:url';
 import { dirname, sep } from 'node:path';
 import { Loader, Cache, Texture, Quaternion, LoaderUtils, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, MeshPhysicalMaterial, Vector2, sRGBEncoding, TangentSpaceNormalMap, InterleavedBuffer, InterleavedBufferAttribute, BufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Object3D, Matrix4, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Vector3, Sphere, Interpolant } from 'three';
 import { readFile } from 'node:fs/promises';
+import fetch, { Request, Headers } from 'node-fetch';
 import sharp from 'sharp';
 import { Worker } from 'node:worker_threads';
 
@@ -939,6 +940,7 @@ class GLTFDracoMeshCompressionExtension {
         const gltfAttributeMap = primitive.extensions[this.name].attributes;
         const threeAttributeMap = {};
         const attributeNormalizedMap = {};
+        const attributeTypeMap = {};
         for (const attributeName in gltfAttributeMap) {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             threeAttributeMap[threeAttributeName] = gltfAttributeMap[attributeName];
@@ -947,7 +949,8 @@ class GLTFDracoMeshCompressionExtension {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             if (gltfAttributeMap[attributeName] !== undefined) {
                 const accessorDef = json.accessors[primitive.attributes[attributeName]];
-                WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+                const componentType = WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+                attributeTypeMap[threeAttributeName] = componentType.name;
                 attributeNormalizedMap[threeAttributeName] = accessorDef.normalized === true;
             }
         }
@@ -961,7 +964,7 @@ class GLTFDracoMeshCompressionExtension {
                             attribute.normalized = normalized;
                     }
                     resolve(geometry);
-                }, threeAttributeMap);
+                }, threeAttributeMap, attributeTypeMap);
             });
         });
     }
@@ -2164,7 +2167,7 @@ class GLTFParser {
             const channel = animationDef.channels[i];
             const sampler = animationDef.samplers[channel.sampler];
             const target = channel.target;
-            const name = target.node !== undefined ? target.node : target.id;
+            const name = target.node;
             const input = animationDef.parameters !== undefined ? animationDef.parameters[sampler.input] : sampler.input;
             const output = animationDef.parameters !== undefined ? animationDef.parameters[sampler.output] : sampler.output;
             pendingNodes.push(this.getDependency('node', name));

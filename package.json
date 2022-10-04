@@ -1,6 +1,6 @@
 {
   "name": "node-three-gltf",
-  "version": "1.2.0",
+  "version": "1.2.0-node16",
   "description": "Use three.js GLTFLoader in a Node.js environment",
   "exports": {
     "import": "./build/index.js",
@@ -9,7 +9,7 @@
   "types": "types/index.d.ts",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "cleanup:build": "rimraf build",
@@ -41,6 +41,7 @@
   "homepage": "https://github.com/Brakebein/node-three-gltf#readme",
   "dependencies": {
     "jsdom": "^20.0.0",
+    "node-fetch": "^2.6.7",
     "sharp": "^0.31.0"
   },
   "devDependencies": {
@@ -48,6 +49,7 @@
     "@rollup/plugin-typescript": "^8.3.4",
     "@types/draco3dgltf": "^1.4.0",
     "@types/jsdom": "^20.0.0",
+    "@types/node-fetch": "^2.6.2",
     "@types/sharp": "^0.31.0",
     "@types/three": "^0.137.0",
     "ava": "^4.3.1",

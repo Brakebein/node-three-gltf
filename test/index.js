@@ -87,3 +87,15 @@ test('load draco-compressed dgm.gltf', async (t) => {
   });
 
 });
+
+test('load gltf with animations', async (t) => {
+
+  const gltf = await loadGltf('test/LittlestTokyo.glb');
+
+  gltf.scene.traverse((child) => {
+    if (child instanceof Mesh) {
+      t.truthy(child.geometry instanceof BufferGeometry, 'check BufferGeometry');
+    }
+  });
+
+});
