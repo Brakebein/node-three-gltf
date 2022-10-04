@@ -940,6 +940,7 @@ class GLTFDracoMeshCompressionExtension {
         const gltfAttributeMap = primitive.extensions[this.name].attributes;
         const threeAttributeMap = {};
         const attributeNormalizedMap = {};
+        const attributeTypeMap = {};
         for (const attributeName in gltfAttributeMap) {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             threeAttributeMap[threeAttributeName] = gltfAttributeMap[attributeName];
@@ -948,7 +949,8 @@ class GLTFDracoMeshCompressionExtension {
             const threeAttributeName = ATTRIBUTES[attributeName] || attributeName.toLowerCase();
             if (gltfAttributeMap[attributeName] !== undefined) {
                 const accessorDef = json.accessors[primitive.attributes[attributeName]];
-                WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+                const componentType = WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+                attributeTypeMap[threeAttributeName] = componentType.name;
                 attributeNormalizedMap[threeAttributeName] = accessorDef.normalized === true;
             }
         }
@@ -962,7 +964,7 @@ class GLTFDracoMeshCompressionExtension {
                             attribute.normalized = normalized;
                     }
                     resolve(geometry);
-                }, threeAttributeMap);
+                }, threeAttributeMap, attributeTypeMap);
             });
         });
     }
@@ -2165,7 +2167,7 @@ class GLTFParser {
             const channel = animationDef.channels[i];
             const sampler = animationDef.samplers[channel.sampler];
             const target = channel.target;
-            const name = target.node !== undefined ? target.node : target.id;
+            const name = target.node;
             const input = animationDef.parameters !== undefined ? animationDef.parameters[sampler.input] : sampler.input;
             const output = animationDef.parameters !== undefined ? animationDef.parameters[sampler.output] : sampler.output;
             pendingNodes.push(this.getDependency('node', name));
