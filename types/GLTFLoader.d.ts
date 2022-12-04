@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { Buffer } from 'node:buffer';
 import { AnimationClip, BufferAttribute, Camera, Group, InterleavedBufferAttribute, Loader, LoadingManager, Material, Mesh, MeshStandardMaterial, Object3D, SkinnedMesh, Texture } from 'three';
 import { DRACOLoader } from './DRACOLoader';
 import { FileLoader } from './FileLoader';

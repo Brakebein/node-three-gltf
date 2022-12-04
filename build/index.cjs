@@ -10,6 +10,7 @@ var node_path = require('node:path');
 var three = require('three');
 var promises = require('node:fs/promises');
 var fetch = require('node-fetch');
+var base64Js = require('base64-js');
 var sharp = require('sharp');
 var node_worker_threads = require('node:worker_threads');
 
@@ -84,7 +85,7 @@ class FileLoader extends three.Loader {
         }
         else if (/^data:application\/octet-stream;base64,/.test(url)) {
             const base64 = url.split(';base64,').pop();
-            const buffer = Buffer.from(base64, 'base64');
+            const buffer = base64Js.toByteArray(base64);
             promise = Promise.resolve(buffer.buffer);
         }
         else {
@@ -194,12 +195,12 @@ class ImageLoader extends three.Loader {
             .then(async () => {
             if (/^blob:.*$/i.test(url)) {
                 const blob = node_buffer.resolveObjectURL(url);
-                const imageBuffer = Buffer.from(await blob.arrayBuffer());
+                const imageBuffer = node_buffer.Buffer.from(await blob.arrayBuffer());
                 return sharp__default["default"](imageBuffer);
             }
             else if (/^data:/.test(url)) {
                 const base64 = url.split(';base64,').pop();
-                const imageBuffer = Buffer.from(base64, 'base64');
+                const imageBuffer = base64Js.toByteArray(base64);
                 return sharp__default["default"](imageBuffer);
             }
             else if (/^https?:\/\//.test(url)) {
@@ -208,7 +209,7 @@ class ImageLoader extends three.Loader {
                     credentials: this.withCredentials ? 'include' : 'same-origin',
                 });
                 const response = await fetch__default["default"](req);
-                const buffer = Buffer.from(await response.arrayBuffer());
+                const buffer = node_buffer.Buffer.from(await response.arrayBuffer());
                 return sharp__default["default"](buffer);
             }
             else {
@@ -373,7 +374,7 @@ class GLTFLoader extends three.Loader {
             content = data;
         }
         else {
-            if (data instanceof Buffer) {
+            if (data instanceof node_buffer.Buffer) {
                 data = data.buffer;
             }
             const magic = three.LoaderUtils.decodeText(new Uint8Array(data.slice(0, 4)));

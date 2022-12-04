@@ -40,6 +40,7 @@
   },
   "homepage": "https://github.com/Brakebein/node-three-gltf#readme",
   "dependencies": {
+    "base64-js": "^1.5.1",
     "jsdom": "^20.0.0",
     "node-fetch": "^2.6.7",
     "sharp": "^0.31.0"

@@ -1,11 +1,12 @@
 import { JSDOM } from 'jsdom';
 import { TextDecoder as TextDecoder$1 } from 'node:util';
-import { Blob as Blob$1, resolveObjectURL } from 'node:buffer';
+import { Blob as Blob$1, resolveObjectURL, Buffer } from 'node:buffer';
 import { URL, fileURLToPath } from 'node:url';
 import { dirname, sep } from 'node:path';
 import { Loader, Cache, Texture, Quaternion, LoaderUtils, Color, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, MeshPhysicalMaterial, Vector2, sRGBEncoding, TangentSpaceNormalMap, InterleavedBuffer, InterleavedBufferAttribute, BufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Object3D, Matrix4, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Vector3, Sphere, Interpolant } from 'three';
 import { readFile } from 'node:fs/promises';
 import fetch, { Request, Headers } from 'node-fetch';
+import { toByteArray } from 'base64-js';
 import sharp from 'sharp';
 import { Worker } from 'node:worker_threads';
 
@@ -75,7 +76,7 @@ class FileLoader extends Loader {
         }
         else if (/^data:application\/octet-stream;base64,/.test(url)) {
             const base64 = url.split(';base64,').pop();
-            const buffer = Buffer.from(base64, 'base64');
+            const buffer = toByteArray(base64);
             promise = Promise.resolve(buffer.buffer);
         }
         else {
@@ -190,7 +191,7 @@ class ImageLoader extends Loader {
             }
             else if (/^data:/.test(url)) {
                 const base64 = url.split(';base64,').pop();
-                const imageBuffer = Buffer.from(base64, 'base64');
+                const imageBuffer = toByteArray(base64);
                 return sharp(imageBuffer);
             }
             else if (/^https?:\/\//.test(url)) {

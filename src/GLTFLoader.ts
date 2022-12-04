@@ -1,4 +1,5 @@
 import { dirname, sep } from 'node:path';
+import { Buffer } from 'node:buffer';
 import {
 	AnimationClip,
 	Bone,

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { Loader, LoadingManager } from 'three';
 import fetch, { Headers, Request } from 'node-fetch';
+import { toByteArray } from 'base64-js';
 
 const loading: {
   [key: string]: {
@@ -92,7 +93,7 @@ export class FileLoader extends Loader {
     } else if (/^data:application\/octet-stream;base64,/.test(url)) {
 
       const base64 = url.split(';base64,').pop();
-      const buffer = Buffer.from(base64, 'base64');
+      const buffer = toByteArray(base64);
 
       promise = Promise.resolve(buffer.buffer);
 

@@ -1,7 +1,8 @@
-import { resolveObjectURL } from 'node:buffer';
+import { Buffer, resolveObjectURL } from 'node:buffer';
 import { Cache, Loader, LoadingManager } from 'three';
 import sharp from 'sharp';
 import fetch, { Headers, Request } from 'node-fetch';
+import { toByteArray } from 'base64-js';
 
 export class ImageLoader extends Loader {
 
@@ -49,7 +50,7 @@ export class ImageLoader extends Loader {
 				} else if (/^data:/.test(url)) {
 
 					const base64 = url.split(';base64,').pop();
-					const imageBuffer = Buffer.from(base64, 'base64');
+					const imageBuffer = toByteArray(base64);
 					return sharp(imageBuffer);
 
 				} else if (/^https?:\/\//.test(url)) {

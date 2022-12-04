@@ -3,7 +3,7 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
 
 export default {
-  external: ['jsdom', 'node-fetch', 'sharp', 'three'],
+  external: ['base64-js', 'jsdom', 'node-fetch', 'sharp', 'three'],
   input: 'src/index.ts',
   plugins: [
     nodeResolve(),
