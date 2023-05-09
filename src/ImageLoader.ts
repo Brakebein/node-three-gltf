@@ -84,6 +84,7 @@ export class ImageLoader extends Loader {
 				data,
 				width: info.width,
 				height: info.height,
+				channels: info.channels,
 			} as unknown as ArrayBuffer))
 			.then(data => {
 
