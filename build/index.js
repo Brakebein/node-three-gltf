@@ -215,6 +215,7 @@ class ImageLoader extends Loader {
             data,
             width: info.width,
             height: info.height,
+            channels: info.channels,
         }))
             .then(data => {
             Cache.add(url, data);

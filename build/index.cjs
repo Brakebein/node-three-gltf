@@ -224,6 +224,7 @@ class ImageLoader extends three.Loader {
             data,
             width: info.width,
             height: info.height,
+            channels: info.channels,
         }))
             .then(data => {
             three.Cache.add(url, data);
