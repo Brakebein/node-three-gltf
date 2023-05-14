@@ -1,19 +1,40 @@
 import test from 'ava';
 import { BufferGeometry, Mesh, Texture } from 'three';
-import { GLTFLoader, loadGltf, TextureLoader } from '../build/index.js';
+import { GLTFLoader, ImageLoader, loadGltf, TextureLoader } from '../build/index.js';
 
 test('load texture from remote', async (t) => {
 
   const loader = new TextureLoader();
   const texture = await new Promise((resolve, reject) => {
-    loader.load('https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/texture.jpg', resolve, null, (e) => {
-      console.error(e);
-      reject(e);
+    loader.load(
+      'https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/texture.jpg',
+      resolve,
+      null,
+      (e) => {
+        console.error(e);
+        reject(e);
       }
     );
   });
 
   t.truthy(texture instanceof Texture, 'check Texture');
+
+});
+
+test('load image', async (t) => {
+
+  const loader = new ImageLoader();
+  const image = await new Promise((resolve, reject) => {
+    loader.load('test/texture.jpg', resolve, null, (e) => {
+      console.error(e);
+      reject(e);
+    });
+  });
+
+  t.truthy(image.data instanceof Buffer, 'check Buffer');
+  t.is(image.width, 512, 'check width');
+  t.is(image.width, 512, 'check height');
+  t.is(image.channels, 4, 'check channels');
 
 });
 
