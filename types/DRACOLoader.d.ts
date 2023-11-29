@@ -24,7 +24,7 @@ export declare class DRACOLoader extends Loader {
     constructor(manager?: LoadingManager);
     setDecoderConfig(config: object): this;
     setWorkerLimit(workerLimit: number): this;
-    load(url: string, onLoad: (geometry: BufferGeometry) => void, onProgress?: () => void, onError?: (err: Error) => void): void;
+    load(url: string, onLoad: (geometry: BufferGeometry) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void): void;
     decodeDracoFile(buffer: ArrayBuffer, callback: (geometry: BufferGeometry) => void, attributeIDs?: any, attributeTypes?: any): void;
     decodeGeometry(buffer: ArrayBuffer, taskConfig: any): Promise<BufferGeometry>;
     _createGeometry(geometryData: any): BufferGeometry;

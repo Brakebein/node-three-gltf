@@ -289,8 +289,14 @@ class GLTFLoader extends three.Loader {
         this.register((parser) => {
             return new GLTFMaterialsIorExtension(parser);
         });
+        this.register(function (parser) {
+            return new GLTFMaterialsEmissiveStrengthExtension(parser);
+        });
         this.register((parser) => {
             return new GLTFMaterialsSpecularExtension(parser);
+        });
+        this.register(function (parser) {
+            return new GLTFMaterialsAnisotropyExtension(parser);
         });
         this.register((parser) => {
             return new GLTFLightsExtension(parser);
@@ -423,9 +429,6 @@ class GLTFLoader extends three.Loader {
                     case EXTENSIONS.KHR_MATERIALS_UNLIT:
                         extensions[extensionName] = new GLTFMaterialsUnlitExtension();
                         break;
-                    case EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS:
-                        extensions[extensionName] = new GLTFMaterialsPbrSpecularGlossinessExtension();
-                        break;
                     case EXTENSIONS.KHR_DRACO_MESH_COMPRESSION:
                         extensions[extensionName] = new GLTFDracoMeshCompressionExtension(json, this.dracoLoader);
                         break;
@@ -476,15 +479,16 @@ const EXTENSIONS = {
     KHR_LIGHTS_PUNCTUAL: 'KHR_lights_punctual',
     KHR_MATERIALS_CLEARCOAT: 'KHR_materials_clearcoat',
     KHR_MATERIALS_IOR: 'KHR_materials_ior',
-    KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS: 'KHR_materials_pbrSpecularGlossiness',
     KHR_MATERIALS_SHEEN: 'KHR_materials_sheen',
     KHR_MATERIALS_SPECULAR: 'KHR_materials_specular',
     KHR_MATERIALS_TRANSMISSION: 'KHR_materials_transmission',
+    KHR_MATERIALS_ANISOTROPY: 'KHR_materials_anisotropy',
     KHR_MATERIALS_UNLIT: 'KHR_materials_unlit',
     KHR_MATERIALS_VOLUME: 'KHR_materials_volume',
     KHR_TEXTURE_BASISU: 'KHR_texture_basisu',
     KHR_TEXTURE_TRANSFORM: 'KHR_texture_transform',
     KHR_MESH_QUANTIZATION: 'KHR_mesh_quantization',
+    KHR_MATERIALS_EMISSIVE_STRENGTH: 'KHR_materials_emissive_strength',
     EXT_TEXTURE_WEBP: 'EXT_texture_webp',
     EXT_MESHOPT_COMPRESSION: 'EXT_meshopt_compression'
 };
@@ -519,7 +523,7 @@ class GLTFLightsExtension {
         let lightNode;
         const color = new three.Color(0xffffff);
         if (lightDef.color !== undefined)
-            color.fromArray(lightDef.color);
+            color.setRGB(lightDef.color[0], lightDef.color[1], lightDef.color[2], three.LinearSRGBColorSpace);
         const range = lightDef.range !== undefined ? lightDef.range : 0;
         switch (lightDef.type) {
             case 'directional':
@@ -583,14 +587,32 @@ class GLTFMaterialsUnlitExtension {
         if (metallicRoughness) {
             if (Array.isArray(metallicRoughness.baseColorFactor)) {
                 const array = metallicRoughness.baseColorFactor;
-                materialParams.color.fromArray(array);
+                materialParams.color.setRGB(array[0], array[1], array[2], three.LinearSRGBColorSpace);
                 materialParams.opacity = array[3];
             }
             if (metallicRoughness.baseColorTexture !== undefined) {
-                pending.push(parser.assignTexture(materialParams, 'map', metallicRoughness.baseColorTexture));
+                pending.push(parser.assignTexture(materialParams, 'map', metallicRoughness.baseColorTexture, three.SRGBColorSpace));
             }
         }
         return Promise.all(pending);
+    }
+}
+class GLTFMaterialsEmissiveStrengthExtension {
+    constructor(parser) {
+        this.name = EXTENSIONS.KHR_MATERIALS_EMISSIVE_STRENGTH;
+        this.parser = parser;
+    }
+    extendMaterialParams(materialIndex, materialParams) {
+        const parser = this.parser;
+        const materialDef = parser.json.materials[materialIndex];
+        if (!materialDef.extensions || !materialDef.extensions[this.name]) {
+            return Promise.resolve();
+        }
+        const emissiveStrength = materialDef.extensions[this.name].emissiveStrength;
+        if (emissiveStrength !== undefined) {
+            materialParams.emissiveIntensity = emissiveStrength;
+        }
+        return Promise.resolve();
     }
 }
 class GLTFMaterialsClearcoatExtension {
@@ -659,13 +681,14 @@ class GLTFMaterialsSheenExtension {
         materialParams.sheen = 1;
         const extension = materialDef.extensions[this.name];
         if (extension.sheenColorFactor !== undefined) {
-            materialParams.sheenColor.fromArray(extension.sheenColorFactor);
+            const colorFactor = extension.sheenColorFactor;
+            materialParams.sheenColor.setRGB(colorFactor[0], colorFactor[1], colorFactor[2], three.LinearSRGBColorSpace);
         }
         if (extension.sheenRoughnessFactor !== undefined) {
             materialParams.sheenRoughness = extension.sheenRoughnessFactor;
         }
         if (extension.sheenColorTexture !== undefined) {
-            pending.push(parser.assignTexture(materialParams, 'sheenColorMap', extension.sheenColorTexture));
+            pending.push(parser.assignTexture(materialParams, 'sheenColorMap', extension.sheenColorTexture, three.SRGBColorSpace));
         }
         if (extension.sheenRoughnessTexture !== undefined) {
             pending.push(parser.assignTexture(materialParams, 'sheenRoughnessMap', extension.sheenRoughnessTexture));
@@ -728,7 +751,7 @@ class GLTFMaterialsVolumeExtension {
         }
         materialParams.attenuationDistance = extension.attenuationDistance || 0;
         const colorArray = extension.attenuationColor || [1, 1, 1];
-        materialParams.attenuationColor = new three.Color(colorArray[0], colorArray[1], colorArray[2]);
+        materialParams.attenuationColor = new three.Color().setRGB(colorArray[0], colorArray[1], colorArray[2], three.LinearSRGBColorSpace);
         return Promise.all(pending);
     }
 }
@@ -780,11 +803,41 @@ class GLTFMaterialsSpecularExtension {
             pending.push(parser.assignTexture(materialParams, 'specularIntensityMap', extension.specularTexture));
         }
         const colorArray = extension.specularColorFactor || [1, 1, 1];
-        materialParams.specularColor = new three.Color(colorArray[0], colorArray[1], colorArray[2]);
+        materialParams.specularColor = new three.Color().setRGB(colorArray[0], colorArray[1], colorArray[2], three.LinearSRGBColorSpace);
         if (extension.specularColorTexture !== undefined) {
-            pending.push(parser.assignTexture(materialParams, 'specularColorMap', extension.specularColorTexture).then(function (texture) {
-                texture.encoding = three.sRGBEncoding;
-            }));
+            pending.push(parser.assignTexture(materialParams, 'specularColorMap', extension.specularColorTexture, three.SRGBColorSpace));
+        }
+        return Promise.all(pending);
+    }
+}
+class GLTFMaterialsAnisotropyExtension {
+    constructor(parser) {
+        this.name = EXTENSIONS.KHR_MATERIALS_ANISOTROPY;
+        this.parser = parser;
+    }
+    getMaterialType(materialIndex) {
+        const parser = this.parser;
+        const materialDef = parser.json.materials[materialIndex];
+        if (!materialDef.extensions || !materialDef.extensions[this.name])
+            return null;
+        return three.MeshPhysicalMaterial;
+    }
+    extendMaterialParams(materialIndex, materialParams) {
+        const parser = this.parser;
+        const materialDef = parser.json.materials[materialIndex];
+        if (!materialDef.extensions || !materialDef.extensions[this.name]) {
+            return Promise.resolve();
+        }
+        const pending = [];
+        const extension = materialDef.extensions[this.name];
+        if (extension.anisotropyStrength !== undefined) {
+            materialParams.anisotropy = extension.anisotropyStrength;
+        }
+        if (extension.anisotropyRotation !== undefined) {
+            materialParams.anisotropyRotation = extension.anisotropyRotation;
+        }
+        if (extension.anisotropyTexture !== undefined) {
+            pending.push(parser.assignTexture(materialParams, 'anisotropyMap', extension.anisotropyTexture));
         }
         return Promise.all(pending);
     }
@@ -802,7 +855,6 @@ class GLTFTextureBasisUExtension {
             return null;
         }
         const extension = textureDef.extensions[this.name];
-        const source = json.images[extension.source];
         const loader = parser.options.ktx2Loader;
         if (!loader) {
             if (json.extensionsRequired && json.extensionsRequired.indexOf(this.name) >= 0) {
@@ -812,7 +864,7 @@ class GLTFTextureBasisUExtension {
                 return null;
             }
         }
-        return parser.loadTextureImage(textureIndex, source, loader);
+        return parser.loadTextureImage(textureIndex, extension.source, loader);
     }
 }
 class GLTFTextureWebPExtension {
@@ -839,7 +891,7 @@ class GLTFTextureWebPExtension {
         }
         return this.detectSupport().then(function (isSupported) {
             if (isSupported)
-                return parser.loadTextureImage(textureIndex, source, loader);
+                return parser.loadTextureImage(textureIndex, extension.source, loader);
             if (json.extensionsRequired && json.extensionsRequired.indexOf(name) >= 0) {
                 throw new Error('THREE.GLTFLoader: WebP required by asset but unsupported.');
             }
@@ -1003,224 +1055,6 @@ class GLTFTextureTransformExtension {
         }
         texture.needsUpdate = true;
         return texture;
-    }
-}
-class GLTFMeshStandardSGMaterial extends three.MeshStandardMaterial {
-    constructor(params) {
-        super();
-        this.isGLTFSpecularGlossinessMaterial = true;
-        const specularMapParsFragmentChunk = [
-            '#ifdef USE_SPECULARMAP',
-            '	uniform sampler2D specularMap;',
-            '#endif'
-        ].join('\n');
-        const glossinessMapParsFragmentChunk = [
-            '#ifdef USE_GLOSSINESSMAP',
-            '	uniform sampler2D glossinessMap;',
-            '#endif'
-        ].join('\n');
-        const specularMapFragmentChunk = [
-            'vec3 specularFactor = specular;',
-            '#ifdef USE_SPECULARMAP',
-            '	vec4 texelSpecular = texture2D( specularMap, vUv );',
-            '	// reads channel RGB, compatible with a glTF Specular-Glossiness (RGBA) texture',
-            '	specularFactor *= texelSpecular.rgb;',
-            '#endif'
-        ].join('\n');
-        const glossinessMapFragmentChunk = [
-            'float glossinessFactor = glossiness;',
-            '#ifdef USE_GLOSSINESSMAP',
-            '	vec4 texelGlossiness = texture2D( glossinessMap, vUv );',
-            '	// reads channel A, compatible with a glTF Specular-Glossiness (RGBA) texture',
-            '	glossinessFactor *= texelGlossiness.a;',
-            '#endif'
-        ].join('\n');
-        const lightPhysicalFragmentChunk = [
-            'PhysicalMaterial material;',
-            'material.diffuseColor = diffuseColor.rgb * ( 1. - max( specularFactor.r, max( specularFactor.g, specularFactor.b ) ) );',
-            'vec3 dxy = max( abs( dFdx( geometryNormal ) ), abs( dFdy( geometryNormal ) ) );',
-            'float geometryRoughness = max( max( dxy.x, dxy.y ), dxy.z );',
-            'material.roughness = max( 1.0 - glossinessFactor, 0.0525 ); // 0.0525 corresponds to the base mip of a 256 cubemap.',
-            'material.roughness += geometryRoughness;',
-            'material.roughness = min( material.roughness, 1.0 );',
-            'material.specularColor = specularFactor;',
-        ].join('\n');
-        const uniforms = {
-            specular: { value: new three.Color().setHex(0xffffff) },
-            glossiness: { value: 1 },
-            specularMap: { value: null },
-            glossinessMap: { value: null }
-        };
-        this._extraUniforms = uniforms;
-        this.onBeforeCompile = function (shader) {
-            for (const uniformName in uniforms) {
-                shader.uniforms[uniformName] = uniforms[uniformName];
-            }
-            shader.fragmentShader = shader.fragmentShader
-                .replace('uniform float roughness;', 'uniform vec3 specular;')
-                .replace('uniform float metalness;', 'uniform float glossiness;')
-                .replace('#include <roughnessmap_pars_fragment>', specularMapParsFragmentChunk)
-                .replace('#include <metalnessmap_pars_fragment>', glossinessMapParsFragmentChunk)
-                .replace('#include <roughnessmap_fragment>', specularMapFragmentChunk)
-                .replace('#include <metalnessmap_fragment>', glossinessMapFragmentChunk)
-                .replace('#include <lights_physical_fragment>', lightPhysicalFragmentChunk);
-        };
-        Object.defineProperties(this, {
-            specular: {
-                get: function () {
-                    return uniforms.specular.value;
-                },
-                set: function (v) {
-                    uniforms.specular.value = v;
-                }
-            },
-            specularMap: {
-                get: function () {
-                    return uniforms.specularMap.value;
-                },
-                set: function (v) {
-                    uniforms.specularMap.value = v;
-                    if (v) {
-                        this.defines.USE_SPECULARMAP = '';
-                    }
-                    else {
-                        delete this.defines.USE_SPECULARMAP;
-                    }
-                }
-            },
-            glossiness: {
-                get: function () {
-                    return uniforms.glossiness.value;
-                },
-                set: function (v) {
-                    uniforms.glossiness.value = v;
-                }
-            },
-            glossinessMap: {
-                get: function () {
-                    return uniforms.glossinessMap.value;
-                },
-                set: function (v) {
-                    uniforms.glossinessMap.value = v;
-                    if (v) {
-                        this.defines.USE_GLOSSINESSMAP = '';
-                        this.defines.USE_UV = '';
-                    }
-                    else {
-                        delete this.defines.USE_GLOSSINESSMAP;
-                        delete this.defines.USE_UV;
-                    }
-                }
-            }
-        });
-        delete this.metalness;
-        delete this.roughness;
-        delete this.metalnessMap;
-        delete this.roughnessMap;
-        this.setValues(params);
-    }
-    copy(source) {
-        super.copy(source);
-        this.specularMap = source.specularMap;
-        this.specular.copy(source.specular);
-        this.glossinessMap = source.glossinessMap;
-        this.glossiness = source.glossiness;
-        delete this.metalness;
-        delete this.roughness;
-        delete this.metalnessMap;
-        delete this.roughnessMap;
-        return this;
-    }
-}
-class GLTFMaterialsPbrSpecularGlossinessExtension {
-    constructor() {
-        this.name = EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS;
-        this.specularGlossinessParams = [
-            'color',
-            'map',
-            'lightMap',
-            'lightMapIntensity',
-            'aoMap',
-            'aoMapIntensity',
-            'emissive',
-            'emissiveIntensity',
-            'emissiveMap',
-            'bumpMap',
-            'bumpScale',
-            'normalMap',
-            'normalMapType',
-            'displacementMap',
-            'displacementScale',
-            'displacementBias',
-            'specularMap',
-            'specular',
-            'glossinessMap',
-            'glossiness',
-            'alphaMap',
-            'envMap',
-            'envMapIntensity',
-            'refractionRatio',
-        ];
-    }
-    getMaterialType() {
-        return GLTFMeshStandardSGMaterial;
-    }
-    extendParams(materialParams, materialDef, parser) {
-        const pbrSpecularGlossiness = materialDef.extensions[this.name];
-        materialParams.color = new three.Color(1.0, 1.0, 1.0);
-        materialParams.opacity = 1.0;
-        const pending = [];
-        if (Array.isArray(pbrSpecularGlossiness.diffuseFactor)) {
-            const array = pbrSpecularGlossiness.diffuseFactor;
-            materialParams.color.fromArray(array);
-            materialParams.opacity = array[3];
-        }
-        if (pbrSpecularGlossiness.diffuseTexture !== undefined) {
-            pending.push(parser.assignTexture(materialParams, 'map', pbrSpecularGlossiness.diffuseTexture));
-        }
-        materialParams.emissive = new three.Color(0.0, 0.0, 0.0);
-        materialParams.glossiness = pbrSpecularGlossiness.glossinessFactor !== undefined ? pbrSpecularGlossiness.glossinessFactor : 1.0;
-        materialParams.specular = new three.Color(1.0, 1.0, 1.0);
-        if (Array.isArray(pbrSpecularGlossiness.specularFactor)) {
-            materialParams.specular.fromArray(pbrSpecularGlossiness.specularFactor);
-        }
-        if (pbrSpecularGlossiness.specularGlossinessTexture !== undefined) {
-            const specGlossMapDef = pbrSpecularGlossiness.specularGlossinessTexture;
-            pending.push(parser.assignTexture(materialParams, 'glossinessMap', specGlossMapDef));
-            pending.push(parser.assignTexture(materialParams, 'specularMap', specGlossMapDef));
-        }
-        return Promise.all(pending);
-    }
-    createMaterial(materialParams) {
-        const material = new GLTFMeshStandardSGMaterial(materialParams);
-        material.fog = true;
-        material.color = materialParams.color;
-        material.map = materialParams.map === undefined ? null : materialParams.map;
-        material.lightMap = null;
-        material.lightMapIntensity = 1.0;
-        material.aoMap = materialParams.aoMap === undefined ? null : materialParams.aoMap;
-        material.aoMapIntensity = 1.0;
-        material.emissive = materialParams.emissive;
-        material.emissiveIntensity = 1.0;
-        material.emissiveMap = materialParams.emissiveMap === undefined ? null : materialParams.emissiveMap;
-        material.bumpMap = materialParams.bumpMap === undefined ? null : materialParams.bumpMap;
-        material.bumpScale = 1;
-        material.normalMap = materialParams.normalMap === undefined ? null : materialParams.normalMap;
-        material.normalMapType = three.TangentSpaceNormalMap;
-        if (materialParams.normalScale)
-            material.normalScale = materialParams.normalScale;
-        material.displacementMap = null;
-        material.displacementScale = 1;
-        material.displacementBias = 0;
-        material.specularMap = materialParams.specularMap === undefined ? null : materialParams.specularMap;
-        material.specular = materialParams.specular;
-        material.glossinessMap = materialParams.glossinessMap === undefined ? null : materialParams.glossinessMap;
-        material.glossiness = materialParams.glossiness;
-        material.alphaMap = null;
-        material.envMap = materialParams.envMap === undefined ? null : materialParams.envMap;
-        material.envMapIntensity = 1.0;
-        material.refractionRatio = 0.98;
-        return material;
     }
 }
 class GLTFMeshQuantizationExtension {
@@ -1496,6 +1330,7 @@ class GLTFParser {
         this.meshCache = { refs: {}, uses: {} };
         this.cameraCache = { refs: {}, uses: {} };
         this.lightCache = { refs: {}, uses: {} };
+        this.sourceCache = {};
         this.textureCache = {};
         this.nodeNamesUsed = {};
         this.json = json;
@@ -1770,47 +1605,27 @@ class GLTFParser {
         const json = this.json;
         const options = this.options;
         const textureDef = json.textures[textureIndex];
-        const source = json.images[textureDef.source];
+        const sourceIndex = textureDef.source;
+        const sourceDef = json.images[sourceIndex];
         let loader = this.textureLoader;
-        if (source.uri) {
-            const handler = options.manager.getHandler(source.uri);
+        if (sourceDef.uri) {
+            const handler = options.manager.getHandler(sourceDef.uri);
             if (handler !== null)
                 loader = handler;
         }
-        return this.loadTextureImage(textureIndex, source, loader);
+        return this.loadTextureImage(textureIndex, sourceIndex, loader);
     }
-    loadTextureImage(textureIndex, source, loader) {
+    loadTextureImage(textureIndex, sourceIndex, loader) {
         const parser = this;
         const json = this.json;
-        const options = this.options;
+        this.options;
         const textureDef = json.textures[textureIndex];
-        const cacheKey = (source.uri || source.bufferView) + ':' + textureDef.sampler;
+        const sourceDef = json.images[sourceIndex];
+        const cacheKey = (sourceDef.uri || sourceDef.bufferView) + ':' + textureDef.sampler;
         if (this.textureCache[cacheKey]) {
             return this.textureCache[cacheKey];
         }
-        const URL = global.URL;
-        let sourceURI = source.uri || '';
-        let isObjectURL = false;
-        if (source.bufferView !== undefined) {
-            sourceURI = parser.getDependency('bufferView', source.bufferView).then(function (bufferView) {
-                isObjectURL = true;
-                const blob = new Blob([bufferView], { type: source.mimeType });
-                sourceURI = URL.createObjectURL(blob);
-                return sourceURI;
-            });
-        }
-        else if (source.uri === undefined) {
-            throw new Error('THREE.GLTFLoader: Image ' + textureIndex + ' is missing URI and bufferView');
-        }
-        const promise = Promise.resolve(sourceURI).then(function (sourceURI) {
-            three.LoaderUtils.resolveURL(sourceURI, options.path);
-            return new Promise(function (resolve, reject) {
-                loader.load(three.LoaderUtils.resolveURL(sourceURI, options.path), resolve, undefined, reject);
-            });
-        }).then(function (texture) {
-            if (isObjectURL === true) {
-                URL.revokeObjectURL(sourceURI);
-            }
+        const promise = this.loadImageSource(sourceIndex, loader).then(function (texture) {
             texture.flipY = false;
             if (textureDef.name)
                 texture.name = textureDef.name;
@@ -1822,14 +1637,52 @@ class GLTFParser {
             texture.wrapT = WEBGL_WRAPPINGS[sampler.wrapT] || three.RepeatWrapping;
             parser.associations.set(texture, { textures: textureIndex });
             return texture;
-        }).catch(() => {
-            console.error('THREE.GLTFLoader: Couldn\'t load texture', sourceURI);
+        }).catch(function () {
             return null;
         });
         this.textureCache[cacheKey] = promise;
         return promise;
     }
-    assignTexture(materialParams, mapName, mapDef) {
+    loadImageSource(sourceIndex, loader) {
+        const parser = this;
+        const json = this.json;
+        const options = this.options;
+        if (this.sourceCache[sourceIndex] !== undefined) {
+            return this.sourceCache[sourceIndex].then((texture) => texture.clone());
+        }
+        const sourceDef = json.images[sourceIndex];
+        const URL = global.URL;
+        let sourceURI = sourceDef.uri || '';
+        let isObjectURL = false;
+        if (sourceDef.bufferView !== undefined) {
+            sourceURI = parser.getDependency('bufferView', sourceDef.bufferView).then(function (bufferView) {
+                isObjectURL = true;
+                const blob = new Blob([bufferView], { type: sourceDef.mimeType });
+                sourceURI = URL.createObjectURL(blob);
+                return sourceURI;
+            });
+        }
+        else if (sourceDef.uri === undefined) {
+            throw new Error('THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView');
+        }
+        const promise = Promise.resolve(sourceURI).then(function (sourceURI) {
+            three.LoaderUtils.resolveURL(sourceURI, options.path);
+            return new Promise(function (resolve, reject) {
+                loader.load(three.LoaderUtils.resolveURL(sourceURI, options.path), resolve, undefined, reject);
+            });
+        }).then(function (texture) {
+            if (isObjectURL === true) {
+                URL.revokeObjectURL(sourceURI);
+            }
+            return texture;
+        }).catch((error) => {
+            console.error('THREE.GLTFLoader: Couldn\'t load texture', sourceURI);
+            throw error;
+        });
+        this.textureCache[sourceIndex] = promise;
+        return promise;
+    }
+    assignTexture(materialParams, mapName, mapDef, colorSpace) {
         const parser = this;
         return this.getDependency('texture', mapDef.index).then(function (texture) {
             if (mapDef.texCoord !== undefined && mapDef.texCoord != 0 && !(mapName === 'aoMap' && mapDef.texCoord == 1)) {
@@ -1842,6 +1695,9 @@ class GLTFParser {
                     texture = parser.extensions[EXTENSIONS.KHR_TEXTURE_TRANSFORM].extendTexture(texture, transform);
                     parser.associations.set(texture, gltfReference);
                 }
+            }
+            if (colorSpace !== undefined) {
+                texture.colorSpace = colorSpace;
             }
             materialParams[mapName] = texture;
             return texture;
@@ -1879,8 +1735,6 @@ class GLTFParser {
         }
         if (useDerivativeTangents || useVertexColors || useFlatShading) {
             let cacheKey = 'ClonedMaterial:' + material.uuid + ':';
-            if (material.isGLTFSpecularGlossinessMaterial)
-                cacheKey += 'specular-glossiness:';
             if (useDerivativeTangents)
                 cacheKey += 'derivative-tangents:';
             if (useVertexColors)
@@ -1922,12 +1776,7 @@ class GLTFParser {
         const materialParams = {};
         const materialExtensions = materialDef.extensions || {};
         const pending = [];
-        if (materialExtensions[EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS]) {
-            const sgExtension = extensions[EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS];
-            materialType = sgExtension.getMaterialType();
-            pending.push(sgExtension.extendParams(materialParams, materialDef, parser));
-        }
-        else if (materialExtensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
+        if (materialExtensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
             const kmuExtension = extensions[EXTENSIONS.KHR_MATERIALS_UNLIT];
             materialType = kmuExtension.getMaterialType();
             pending.push(kmuExtension.extendParams(materialParams, materialDef, parser));
@@ -1938,11 +1787,11 @@ class GLTFParser {
             materialParams.opacity = 1.0;
             if (Array.isArray(metallicRoughness.baseColorFactor)) {
                 const array = metallicRoughness.baseColorFactor;
-                materialParams.color.fromArray(array);
+                materialParams.color.setRGB(array[0], array[1], array[2], three.LinearSRGBColorSpace);
                 materialParams.opacity = array[3];
             }
             if (metallicRoughness.baseColorTexture !== undefined) {
-                pending.push(parser.assignTexture(materialParams, 'map', metallicRoughness.baseColorTexture));
+                pending.push(parser.assignTexture(materialParams, 'map', metallicRoughness.baseColorTexture, three.SRGBColorSpace));
             }
             materialParams.metalness = metallicRoughness.metallicFactor !== undefined ? metallicRoughness.metallicFactor : 1.0;
             materialParams.roughness = metallicRoughness.roughnessFactor !== undefined ? metallicRoughness.roughnessFactor : 1.0;
@@ -1986,25 +1835,16 @@ class GLTFParser {
             }
         }
         if (materialDef.emissiveFactor !== undefined && materialType !== three.MeshBasicMaterial) {
-            materialParams.emissive = new three.Color().fromArray(materialDef.emissiveFactor);
+            const emissiveFactor = materialDef.emissiveFactor;
+            materialParams.emissive = new three.Color().setRGB(emissiveFactor[0], emissiveFactor[1], emissiveFactor[2], three.LinearSRGBColorSpace);
         }
         if (materialDef.emissiveTexture !== undefined && materialType !== three.MeshBasicMaterial) {
-            pending.push(parser.assignTexture(materialParams, 'emissiveMap', materialDef.emissiveTexture));
+            pending.push(parser.assignTexture(materialParams, 'emissiveMap', materialDef.emissiveTexture, three.SRGBColorSpace));
         }
         return Promise.all(pending).then(function () {
-            let material;
-            if (materialType === GLTFMeshStandardSGMaterial) {
-                material = extensions[EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS].createMaterial(materialParams);
-            }
-            else {
-                material = new materialType(materialParams);
-            }
+            const material = new materialType(materialParams);
             if (materialDef.name)
                 material.name = materialDef.name;
-            if (material.map)
-                material.map.encoding = three.sRGBEncoding;
-            if (material.emissiveMap)
-                material.emissiveMap.encoding = three.sRGBEncoding;
             assignExtrasToUserData(material, materialDef);
             parser.associations.set(material, { materials: materialIndex });
             if (materialDef.extensions)
@@ -2521,6 +2361,9 @@ function addPrimitiveAttributes(geometry, primitiveDef, parser) {
             geometry.setIndex(accessor);
         });
         pending.push(accessor);
+    }
+    if (three.ColorManagement.workingColorSpace !== three.LinearSRGBColorSpace && 'COLOR_0' in attributes) {
+        console.warn(`THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${three.ColorManagement.workingColorSpace}" not supported.`);
     }
     assignExtrasToUserData(geometry, primitiveDef);
     computeBounds(geometry, primitiveDef, parser);

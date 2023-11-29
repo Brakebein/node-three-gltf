@@ -40,7 +40,7 @@ export declare class GLTFLoader extends Loader {
     meshoptDecoder: any;
     pluginCallbacks: any[];
     constructor(manager?: LoadingManager);
-    load(url: string, onLoad: (gltf: GLTF) => void, onProgress?: () => void, onError?: (err: Error) => void): void;
+    load(url: string, onLoad: (gltf: GLTF) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void): void;
     setDRACOLoader(dracoLoader: DRACOLoader): GLTFLoader;
     setDDSLoader(): void;
     setMeshoptDecoder(meshoptDecoder: any): GLTFLoader;
@@ -73,6 +73,7 @@ declare class GLTFParser {
         refs: {};
         uses: {};
     };
+    sourceCache: {};
     textureCache: {};
     nodeNamesUsed: {};
     textureLoader: TextureLoader;
@@ -135,15 +136,17 @@ declare class GLTFParser {
      * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#textures
      */
     loadTexture(textureIndex: number): Promise<Texture>;
-    loadTextureImage(textureIndex: number, source: any, loader: TextureLoader): any;
+    loadTextureImage(textureIndex: number, sourceIndex: number, loader: TextureLoader): any;
+    loadImageSource(sourceIndex: any, loader: any): any;
     /**
      * Asynchronously assigns a texture to the given material parameters.
      * @param {Object} materialParams
      * @param {string} mapName
      * @param {Object} mapDef
+     * @param {string=} colorSpace
      * @return {Promise<Texture>}
      */
-    assignTexture(materialParams: any, mapName: any, mapDef: any): Promise<Texture>;
+    assignTexture(materialParams: any, mapName: any, mapDef: any, colorSpace?: any): Promise<Texture>;
     /**
      * Assigns final material to a Mesh, Line, or Points instance. The instance
      * already has a material (generated from the glTF material options alone)
