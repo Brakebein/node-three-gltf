@@ -56,7 +56,7 @@ export class DRACOLoader extends Loader {
 
 	}
 
-	load( url: string, onLoad: (geometry: BufferGeometry) => void, onProgress?: () => void, onError?: (err: Error) => void ) {
+	load( url: string, onLoad: (geometry: BufferGeometry) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void ) {
 
 		const loader = new FileLoader( this.manager );
 

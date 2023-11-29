@@ -9,7 +9,7 @@ export class TextureLoader extends Loader {
 
 	}
 
-	load( url: string, onLoad?: (texture: Texture) => void, onProgress?: () => void, onError?: (err: Error) => void ): Texture {
+	load( url: string, onLoad?: (texture: Texture) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void ): Texture {
 
 		const texture = new Texture();
 

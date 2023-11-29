@@ -12,7 +12,7 @@ export class ImageLoader extends Loader {
 
 	}
 
-	load( url: string, onLoad?: (image: ArrayBuffer) => void, onProgress?: () => void, onError?: (err: Error) => void ) {
+	load( url: string, onLoad?: (image: ArrayBuffer) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void ) {
 
 		if ( this.path !== undefined ) url = this.path + url;
 

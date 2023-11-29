@@ -6,7 +6,7 @@ import { toByteArray } from 'base64-js';
 const loading: {
   [key: string]: {
     onLoad?: (response: string | ArrayBuffer) => void,
-    onProgress?: () => void,
+    onProgress?: (event: ProgressEvent) => void,
     onError?: (err: Error) => void
   }[]} = {};
 
@@ -21,7 +21,7 @@ export class FileLoader extends Loader {
 
   }
 
-  load(url: string, onLoad?: (response: string | ArrayBuffer) => void, onProgress?: () => void, onError?: (err: Error) => void ) {
+  load(url: string, onLoad?: (response: string | ArrayBuffer) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void ) {
 
     if ( url === undefined ) url = '';
 
