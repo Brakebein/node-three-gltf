@@ -6,6 +6,7 @@
     "sourceMap": true,
     "removeComments": false,
     "allowSyntheticDefaultImports": true,
+    "newLine": "lf",
     "lib": [
       "es2018"
     ]
