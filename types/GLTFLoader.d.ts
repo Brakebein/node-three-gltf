@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { Buffer } from 'node:buffer';
 import { AnimationClip, BufferAttribute, Camera, Group, InterleavedBufferAttribute, Loader, LoadingManager, Material, Mesh, MeshStandardMaterial, Object3D, SkinnedMesh, Texture } from 'three';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
 import { DRACOLoader } from './DRACOLoader';
 import { FileLoader } from './FileLoader';
 import { TextureLoader } from './TextureLoader';
@@ -43,6 +44,7 @@ export declare class GLTFLoader extends Loader {
     load(url: string, onLoad: (gltf: GLTF) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void): void;
     setDRACOLoader(dracoLoader: DRACOLoader): GLTFLoader;
     setDDSLoader(): void;
+    setKTX2Loader(ktx2Loader: KTX2Loader): GLTFLoader;
     setMeshoptDecoder(meshoptDecoder: any): GLTFLoader;
     register(callback: (parser: GLTFParser) => GLTFLoaderPlugin): GLTFLoader;
     unregister(callback: (parser: GLTFParser) => GLTFLoaderPlugin): GLTFLoader;

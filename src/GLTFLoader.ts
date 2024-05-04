@@ -64,6 +64,7 @@ import {
 	Vector3,
 	VectorKeyframeTrack
 } from 'three';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
 import { DRACOLoader } from './DRACOLoader';
 import { FileLoader } from './FileLoader';
 import { TextureLoader } from './TextureLoader';
@@ -284,12 +285,12 @@ export class GLTFLoader extends Loader {
 
 	}
 
-	// setKTX2Loader( ktx2Loader: KTX2Loader ): GLTFLoader {
-	//
-	// 	this.ktx2Loader = ktx2Loader;
-	// 	return this;
-	//
-	// }
+	setKTX2Loader( ktx2Loader: KTX2Loader ): GLTFLoader {
+
+		this.ktx2Loader = ktx2Loader;
+		return this;
+
+	}
 
 	setMeshoptDecoder( meshoptDecoder ): GLTFLoader {
 
@@ -2790,7 +2791,7 @@ class GLTFParser {
 
 			}
 
-			if ( colorSpace !== undefined ) {
+			if ( texture && colorSpace !== undefined ) {
 
 				texture.colorSpace = colorSpace;
 
