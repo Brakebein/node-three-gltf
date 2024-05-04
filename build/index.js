@@ -348,6 +348,10 @@ class GLTFLoader extends Loader {
     setDDSLoader() {
         throw new Error('THREE.GLTFLoader: "MSFT_texture_dds" no longer supported. Please update to "KHR_texture_basisu".');
     }
+    setKTX2Loader(ktx2Loader) {
+        this.ktx2Loader = ktx2Loader;
+        return this;
+    }
     setMeshoptDecoder(meshoptDecoder) {
         this.meshoptDecoder = meshoptDecoder;
         return this;
@@ -1687,7 +1691,7 @@ class GLTFParser {
                     parser.associations.set(texture, gltfReference);
                 }
             }
-            if (colorSpace !== undefined) {
+            if (texture && colorSpace !== undefined) {
                 texture.colorSpace = colorSpace;
             }
             materialParams[mapName] = texture;
