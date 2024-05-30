@@ -28,6 +28,8 @@ import {
 } from 'three';
 import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter';
 import { decompress } from 'three/examples/jsm/utils/TextureUtils';
+import sharp from 'sharp';
+import { Buffer } from 'node:buffer';
 
 /**
  * The KHR_mesh_quantization extension allows these extra attribute component types
@@ -386,7 +388,7 @@ class GLTFExporter {
    */
   parse(
     input: Object3D | Object3D[],
-    onDone: (gltf: ArrayBuffer | { [key: string]: any }) => void,
+    onDone: (gltf: Buffer | { [key: string]: any }) => void,
     onError: (error: ErrorEvent) => void,
     options?: GLTFExporterOptions,
   ): void {
@@ -408,7 +410,7 @@ class GLTFExporter {
   parseAsync(
     input: Object3D | Object3D[],
     options?: GLTFExporterOptions,
-  ): Promise<ArrayBuffer | { [key: string]: any }> {
+  ): Promise<Buffer | { [key: string]: any }> {
 
     const scope = this;
 
@@ -640,44 +642,13 @@ function getPaddedArrayBuffer( arrayBuffer, paddingByte = 0 ) {
 
 function getCanvas() {
 
-  if ( typeof document === 'undefined' && typeof OffscreenCanvas !== 'undefined' ) {
-
-    return new OffscreenCanvas( 1, 1 );
-
-  }
+  // if ( typeof document === 'undefined' && typeof OffscreenCanvas !== 'undefined' ) {
+  //
+  //   return new OffscreenCanvas( 1, 1 );
+  //
+  // }
 
   return document.createElement( 'canvas' );
-
-}
-
-function getToBlobPromise( canvas, mimeType ) {
-
-  if ( canvas.toBlob !== undefined ) {
-
-    return new Promise( ( resolve ) => canvas.toBlob( resolve, mimeType ) );
-
-  }
-
-  let quality;
-
-  // Blink's implementation of convertToBlob seems to default to a quality level of 100%
-  // Use the Blink default quality levels of toBlob instead so that file sizes are comparable.
-  if ( mimeType === 'image/jpeg' ) {
-
-    quality = 0.92;
-
-  } else if ( mimeType === 'image/webp' ) {
-
-    quality = 0.8;
-
-  }
-
-  return canvas.convertToBlob( {
-
-    type: mimeType,
-    quality: quality
-
-  } );
 
 }
 
@@ -730,7 +701,7 @@ class GLTFWriter {
    * @param  {Function} onDone  Callback on completed
    * @param  {Object} options options
    */
-  async write( input: Object3D | Object3D[], onDone: (gltf: ArrayBuffer | { [key: string]: any}) => void, options: GLTFExporterOptions = {} ): Promise<void> {
+  async write( input: Object3D | Object3D[], onDone: (gltf: Buffer | { [key: string]: any}) => void, options: GLTFExporterOptions = {} ): Promise<void> {
 
     this.options = Object.assign( {
       // default options
@@ -778,12 +749,10 @@ class GLTFWriter {
 
       // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
 
-      const reader = new FileReader();
-      reader.readAsArrayBuffer( blob );
-      reader.onloadend = function () {
+      blob.arrayBuffer().then((arrayBuffer) => {
 
         // Binary chunk.
-        const binaryChunk = getPaddedArrayBuffer( reader.result );
+        const binaryChunk = getPaddedArrayBuffer( arrayBuffer );
         const binaryChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
         binaryChunkPrefix.setUint32( 0, binaryChunk.byteLength, true );
         binaryChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_BIN, true );
@@ -812,29 +781,22 @@ class GLTFWriter {
           binaryChunk
         ], { type: 'application/octet-stream' } );
 
-        const glbReader = new FileReader();
-        glbReader.readAsArrayBuffer( glbBlob );
-        glbReader.onloadend = function () {
+        return glbBlob.arrayBuffer();
 
-          onDone( glbReader.result as ArrayBuffer );
+      }).then((glbArrayBuffer) => {
 
-        };
+        onDone(Buffer.from(glbArrayBuffer));
 
-      };
+      });
 
     } else {
 
       if ( json.buffers && json.buffers.length > 0 ) {
 
-        const reader = new FileReader();
-        reader.readAsDataURL( blob );
-        reader.onloadend = function () {
-
-          const base64data = reader.result;
-          json.buffers[ 0 ].uri = base64data;
-          onDone( json );
-
-        };
+        blob.arrayBuffer().then((arrayBuffer) => {
+          json.buffers[0].uri = 'data:application/octet-stream;base64,' + Buffer.from(arrayBuffer).toString('base64');
+          onDone(json);
+        });
 
       } else {
 
@@ -1307,36 +1269,27 @@ class GLTFWriter {
 
   /**
    * Process and generate a BufferView from an image Blob.
-   * @param {Blob} blob
-   * @return {Promise<Integer>}
+   * @param {Buffer} imgBuffer
+   * @return {Integer}
    */
-  processBufferViewImage( blob ) {
+  processBufferViewImage( imgBuffer: Buffer ): number {
 
     const writer = this;
     const json = writer.json;
 
     if ( ! json.bufferViews ) json.bufferViews = [];
 
-    return new Promise( function ( resolve ) {
+    const buffer = getPaddedArrayBuffer( imgBuffer.buffer );
 
-      const reader = new FileReader();
-      reader.readAsArrayBuffer( blob );
-      reader.onloadend = function () {
+    const bufferViewDef = {
+      buffer: writer.processBuffer( buffer ),
+      byteOffset: writer.byteOffset,
+      byteLength: buffer.byteLength
+    };
 
-        const buffer = getPaddedArrayBuffer( reader.result );
+    writer.byteOffset += buffer.byteLength;
 
-        const bufferViewDef = {
-          buffer: writer.processBuffer( buffer ),
-          byteOffset: writer.byteOffset,
-          byteLength: buffer.byteLength
-        };
-
-        writer.byteOffset += buffer.byteLength;
-        resolve( json.bufferViews.push( bufferViewDef ) - 1 );
-
-      };
-
-    } );
+    return json.bufferViews.push( bufferViewDef ) - 1;
 
   }
 
@@ -1468,19 +1421,7 @@ class GLTFWriter {
 
       const imageDef: any = { mimeType: mimeType };
 
-      const canvas = getCanvas();
-
-      canvas.width = Math.min( image.width, options.maxTextureSize );
-      canvas.height = Math.min( image.height, options.maxTextureSize );
-
-      const ctx = canvas.getContext( '2d' );
-
-      if ( flipY === true ) {
-
-        ctx.translate( 0, canvas.height );
-        ctx.scale( 1, - 1 );
-
-      }
+      let imgSharp: sharp.Sharp;
 
       if ( image.data !== undefined ) { // THREE.DataTexture
 
@@ -1496,33 +1437,19 @@ class GLTFWriter {
 
         }
 
-        const data = new Uint8ClampedArray( image.height * image.width * 4 );
-
-        for ( let i = 0; i < data.length; i += 4 ) {
-
-          data[ i + 0 ] = image.data[ i + 0 ];
-          data[ i + 1 ] = image.data[ i + 1 ];
-          data[ i + 2 ] = image.data[ i + 2 ];
-          data[ i + 3 ] = image.data[ i + 3 ];
-
-        }
-
-        ctx.putImageData( new ImageData( data, image.width, image.height ), 0, 0 );
+        imgSharp = sharp(image.data, {
+          raw: {
+            width: Math.min(image.width, options.maxTextureSize),
+            height: Math.min(image.height, options.maxTextureSize),
+            channels: image.channels,
+          },
+        })
+          .flip(flipY === true)
+          .toFormat(mimeType.split('/').pop() as keyof sharp.FormatEnum);
 
       } else {
 
-        if ( ( typeof HTMLImageElement !== 'undefined' && image instanceof HTMLImageElement ) ||
-          ( typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement ) ||
-          ( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ||
-          ( typeof OffscreenCanvas !== 'undefined' && image instanceof OffscreenCanvas ) ) {
-
-          ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
-
-        } else {
-
-          throw new Error( 'THREE.GLTFExporter: Invalid image type. Use HTMLImageElement, HTMLCanvasElement, ImageBitmap or OffscreenCanvas.' );
-
-        }
+        throw new Error( 'THREE.GLTFExporter: Invalid image type.' );
 
       }
 
@@ -1530,37 +1457,19 @@ class GLTFWriter {
 
         pending.push(
 
-          getToBlobPromise( canvas, mimeType )
-            .then( blob => writer.processBufferViewImage( blob ) )
-            .then( bufferViewIndex => {
-
-              imageDef.bufferView = bufferViewIndex;
-
-            } )
+          imgSharp.toBuffer().then((buffer) => {
+            imageDef.bufferView = writer.processBufferViewImage(buffer);
+          })
 
         );
 
       } else {
 
-        if ( canvas.toDataURL !== undefined ) {
-
-          imageDef.uri = canvas.toDataURL( mimeType );
-
-        } else {
-
-          pending.push(
-
-            getToBlobPromise( canvas, mimeType )
-              .then( blob => new FileReader().readAsDataURL( blob ) )
-              .then( dataURL => {
-
-                imageDef.uri = dataURL;
-
-              } )
-
-          );
-
-        }
+        pending.push(
+          imgSharp.toBuffer().then((buffer) => {
+            imageDef.uri =  'data:' + mimeType + ';base64,' + buffer.toString('base64');
+          })
+        );
 
       }
 
