@@ -1,6 +1,7 @@
 import test from 'ava';
+import { Buffer } from 'node:buffer';
 import { BufferGeometry, Mesh, Texture } from 'three';
-import { GLTFLoader, ImageLoader, loadGltf, TextureLoader } from '../build/index.js';
+import { GLTFExporter, GLTFLoader, ImageLoader, loadGltf, TextureLoader } from '../build/index.js';
 
 test('load texture from remote', async (t) => {
 
@@ -118,5 +119,37 @@ test('load gltf with animations', async (t) => {
       t.truthy(child.geometry instanceof BufferGeometry, 'check BufferGeometry');
     }
   });
+
+});
+
+test('export scene as gltf json', async (t) => {
+
+  const gltf = await loadGltf('test/knot-separate.gltf');
+  const exporter = new GLTFExporter();
+  const gltfJson = await exporter.parseAsync(gltf.scene);
+
+  t.notThrows(() => {
+    JSON.parse(JSON.stringify(gltfJson));
+  }, 'should be valid JSON');
+  t.like(gltfJson.asset, {
+    version: '2.0'
+  }, 'check gltf json asset block');
+  t.like(gltfJson.nodes[0], {
+    name: 'Torus_Knot001',
+    extras: {
+      name: 'Torus_Knot001'
+    },
+    mesh: 0
+  }, 'check first node');
+
+});
+
+test('export scene as binary glb', async (t) => {
+
+  const gltf = await loadGltf('test/knot-separate.gltf');
+  const exporter = new GLTFExporter();
+  const glbBuffer = await exporter.parseAsync(gltf.scene, { binary: true });
+
+  t.truthy(glbBuffer instanceof Buffer, 'check glb buffer');
 
 });
