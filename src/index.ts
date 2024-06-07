@@ -7,6 +7,7 @@ export * from './DRACOLoader';
 export * from './FileLoader';
 export * from './TextureLoader';
 export * from './ImageLoader';
+export * from './GLTFExporter';
 
 /**
  * Load (draco-compressed) gltf file from local file or web resource and decode/parse content.
