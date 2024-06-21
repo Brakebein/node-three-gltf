@@ -1269,7 +1269,7 @@ class GLTFTextureWebPExtension {
 
 	name = EXTENSIONS.EXT_TEXTURE_WEBP;
 	parser: GLTFParser;
-	isSupported = null;
+	isSupported: Promise<boolean> | null = null;
 
 	constructor( parser: GLTFParser ) {
 
@@ -1323,23 +1323,24 @@ class GLTFTextureWebPExtension {
 
 		if ( ! this.isSupported ) {
 
-			this.isSupported = new Promise( function ( resolve ) {
+			// WebP is supported with sharp
+			this.isSupported = Promise.resolve(true);
 
-				resolve(false);
-
-				// const image = new Image();
-				//
-				// // Lossy test image. Support for lossy images doesn't guarantee support for all
-				// // WebP images, unfortunately.
-				// image.src = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
-				//
-				// image.onload = image.onerror = function () {
-				//
-				// 	resolve( image.height === 1 );
-				//
-				// };
-
-			} );
+			// this.isSupported = new Promise( function ( resolve ) {
+			//
+			// 	const image = new Image();
+			//
+			// 	// Lossy test image. Support for lossy images doesn't guarantee support for all
+			// 	// WebP images, unfortunately.
+			// 	image.src = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
+			//
+			// 	image.onload = image.onerror = function () {
+			//
+			// 		resolve( image.height === 1 );
+			//
+			// 	};
+			//
+			// } );
 
 		}
 
