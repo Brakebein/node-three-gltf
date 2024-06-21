@@ -904,9 +904,7 @@ class GLTFTextureWebPExtension {
     }
     detectSupport() {
         if (!this.isSupported) {
-            this.isSupported = new Promise(function (resolve) {
-                resolve(false);
-            });
+            this.isSupported = Promise.resolve(true);
         }
         return this.isSupported;
     }

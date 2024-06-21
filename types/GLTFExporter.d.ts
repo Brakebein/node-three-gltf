@@ -18,10 +18,35 @@ declare class GLTFExporter {
      * @param  {Function} onError  Callback on errors
      * @param  {Object} options options
      */
-    parse(input: Object3D | Object3D[], onDone: (gltf: Buffer | {
+    parse(input: Object3D | Object3D[], onDone: (gltf: Buffer) => void, onError: (error: ErrorEvent) => void, options: GLTFExporterOptions & {
+        binary: true;
+    }): void;
+    /**
+     * Parse scenes and generate GLTF output
+     * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
+     * @param  {Function} onDone  Callback on completed
+     * @param  {Function} onError  Callback on errors
+     * @param  {Object} options options
+     */
+    parse(input: Object3D | Object3D[], onDone: (gltf: {
         [key: string]: any;
     }) => void, onError: (error: ErrorEvent) => void, options?: GLTFExporterOptions): void;
-    parseAsync(input: Object3D | Object3D[], options?: GLTFExporterOptions): Promise<Buffer | {
+    /**
+     * Parse scenes and generate GLTF output
+     * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
+     * @param  {Object} options options
+     * @return GLB buffer
+     */
+    parseAsync(input: Object3D | Object3D[], options: GLTFExporterOptions & {
+        binary: true;
+    }): Promise<Buffer>;
+    /**
+     * Parse scenes and generate GLTF output
+     * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
+     * @param  {Object} options options
+     * @return GLTF JSON object
+     */
+    parseAsync(input: Object3D | Object3D[], options?: GLTFExporterOptions): Promise<{
         [key: string]: any;
     }>;
 }
