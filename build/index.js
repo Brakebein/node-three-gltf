@@ -3,7 +3,7 @@ import { TextDecoder as TextDecoder$1 } from 'node:util';
 import { Blob as Blob$1, resolveObjectURL, Buffer } from 'node:buffer';
 import { URL, fileURLToPath } from 'node:url';
 import { dirname, sep } from 'node:path';
-import { Loader, Cache, Texture, Quaternion, LoaderUtils, Color, LinearSRGBColorSpace, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, InterleavedBuffer, InterleavedBufferAttribute, BufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Object3D, Matrix4, Skeleton, ColorManagement, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Vector3, Sphere, Interpolant, PlaneGeometry, ShaderMaterial, Uniform, Scene, WebGLRenderer, REVISION, CompressedTexture, Source, NoColorSpace, RGBAFormat } from 'three';
+import { Loader, Cache, Texture, Quaternion, LoaderUtils, Color, LinearSRGBColorSpace, SpotLight, PointLight, DirectionalLight, MeshBasicMaterial, SRGBColorSpace, MeshPhysicalMaterial, Vector2, BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, LineBasicMaterial, MeshStandardMaterial, DoubleSide, PropertyBinding, BufferGeometry, SkinnedMesh, Mesh, LineSegments, Line, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Object3D, Matrix4, Skeleton, ColorManagement, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, FrontSide, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, Box3, Vector3, Sphere, Interpolant, PlaneGeometry, ShaderMaterial, Uniform, Scene, WebGLRenderer, REVISION, CompressedTexture, Source, NoColorSpace, RGBAFormat } from 'three';
 import { readFile } from 'node:fs/promises';
 import fetch, { Request, Headers } from 'node-fetch';
 import { toByteArray } from 'base64-js';
@@ -1525,7 +1525,11 @@ class GLTFParser {
         const json = this.json;
         const accessorDef = this.json.accessors[accessorIndex];
         if (accessorDef.bufferView === undefined && accessorDef.sparse === undefined) {
-            return Promise.resolve(null);
+            const itemSize = WEBGL_TYPE_SIZES[accessorDef.type];
+            const TypedArray = WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+            const normalized = accessorDef.normalized === true;
+            const array = new TypedArray(accessorDef.count * itemSize);
+            return Promise.resolve(new BufferAttribute(array, itemSize, normalized));
         }
         const pendingBufferViews = [];
         if (accessorDef.bufferView !== undefined) {

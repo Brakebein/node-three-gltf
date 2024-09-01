@@ -1534,7 +1534,11 @@ class GLTFParser {
         const json = this.json;
         const accessorDef = this.json.accessors[accessorIndex];
         if (accessorDef.bufferView === undefined && accessorDef.sparse === undefined) {
-            return Promise.resolve(null);
+            const itemSize = WEBGL_TYPE_SIZES[accessorDef.type];
+            const TypedArray = WEBGL_COMPONENT_TYPES[accessorDef.componentType];
+            const normalized = accessorDef.normalized === true;
+            const array = new TypedArray(accessorDef.count * itemSize);
+            return Promise.resolve(new three.BufferAttribute(array, itemSize, normalized));
         }
         const pendingBufferViews = [];
         if (accessorDef.bufferView !== undefined) {
