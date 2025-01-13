@@ -36,6 +36,7 @@ export interface GLTFLoaderPlugin {
     createNodeAttachment?: ((nodeIndex: number) => Promise<Object3D> | null) | undefined;
 }
 export declare class GLTFLoader extends Loader {
+    static LOG_TEXTURE_LOAD_ERROR: boolean;
     dracoLoader: DRACOLoader;
     ktx2Loader: any;
     meshoptDecoder: any;
