@@ -105,6 +105,8 @@ export interface GLTFLoaderPlugin {
 
 export class GLTFLoader extends Loader {
 
+	static LOG_TEXTURE_LOAD_ERROR = true;
+
 	dracoLoader: DRACOLoader = null;
 	ktx2Loader = null;
 	meshoptDecoder = null;
@@ -2747,7 +2749,10 @@ class GLTFParser {
 
 		} ).catch( ( error ) => {
 
-			console.error( 'THREE.GLTFLoader: Couldn\'t load texture', sourceURI );
+			if ( GLTFLoader.LOG_TEXTURE_LOAD_ERROR ) {
+				console.error( 'THREE.GLTFLoader: Couldn\'t load texture', sourceURI );				
+			}
+
 			throw error;
 
 		} );
