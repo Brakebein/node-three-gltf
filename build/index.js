@@ -451,6 +451,7 @@ class GLTFLoader extends Loader {
         });
     }
 }
+GLTFLoader.LOG_TEXTURE_LOAD_ERROR = true;
 function GLTFRegistry() {
     let objects = {};
     return {
@@ -1673,7 +1674,9 @@ class GLTFParser {
             }
             return texture;
         }).catch((error) => {
-            console.error('THREE.GLTFLoader: Couldn\'t load texture', sourceURI);
+            if (GLTFLoader.LOG_TEXTURE_LOAD_ERROR) {
+                console.error('THREE.GLTFLoader: Couldn\'t load texture', sourceURI);
+            }
             throw error;
         });
         this.textureCache[sourceIndex] = promise;
