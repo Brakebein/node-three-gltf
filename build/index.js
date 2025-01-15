@@ -372,6 +372,7 @@ class GLTFLoader extends Loader {
         let content;
         const extensions = {};
         const plugins = {};
+        const textDecoder = new TextDecoder();
         if (typeof data === 'string') {
             content = data;
         }
@@ -379,7 +380,7 @@ class GLTFLoader extends Loader {
             if (data instanceof Buffer) {
                 data = data.buffer;
             }
-            const magic = LoaderUtils.decodeText(new Uint8Array(data.slice(0, 4)));
+            const magic = textDecoder.decode(new Uint8Array(data.slice(0, 4)));
             if (magic === BINARY_EXTENSION_HEADER_MAGIC) {
                 try {
                     extensions[EXTENSIONS.KHR_BINARY_GLTF] = new GLTFBinaryExtension(data);
@@ -392,7 +393,7 @@ class GLTFLoader extends Loader {
                 content = extensions[EXTENSIONS.KHR_BINARY_GLTF].content;
             }
             else {
-                content = LoaderUtils.decodeText(new Uint8Array(data));
+                content = textDecoder.decode(new Uint8Array(data));
             }
         }
         const json = JSON.parse(content);
@@ -946,8 +947,9 @@ class GLTFBinaryExtension {
         this.content = null;
         this.body = null;
         const headerView = new DataView(data, 0, BINARY_EXTENSION_HEADER_LENGTH);
+        const textDecoder = new TextDecoder();
         this.header = {
-            magic: LoaderUtils.decodeText(new Uint8Array(data.slice(0, 4))),
+            magic: textDecoder.decode(new Uint8Array(data.slice(0, 4))),
             version: headerView.getUint32(4, true),
             length: headerView.getUint32(8, true)
         };
@@ -967,7 +969,7 @@ class GLTFBinaryExtension {
             chunkIndex += 4;
             if (chunkType === BINARY_EXTENSION_CHUNK_TYPES.JSON) {
                 const contentArray = new Uint8Array(data, BINARY_EXTENSION_HEADER_LENGTH + chunkIndex, chunkLength);
-                this.content = LoaderUtils.decodeText(contentArray);
+                this.content = textDecoder.decode(contentArray);
             }
             else if (chunkType === BINARY_EXTENSION_CHUNK_TYPES.BIN) {
                 const byteOffset = BINARY_EXTENSION_HEADER_LENGTH + chunkIndex;

@@ -122,6 +122,12 @@ test('load gltf with animations', async (t) => {
 
 });
 
+test('check static LOG_TEXTURE_LOAD_ERROR', (t) => {
+
+  t.true(GLTFLoader.LOG_TEXTURE_LOAD_ERROR);
+
+});
+
 test('export scene as gltf json', async (t) => {
 
   const gltf = await loadGltf('test/knot-separate.gltf');
