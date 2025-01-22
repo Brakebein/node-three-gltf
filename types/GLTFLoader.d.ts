@@ -1,9 +1,9 @@
 import { Buffer } from 'node:buffer';
 import { AnimationClip, BufferAttribute, Camera, Group, InterleavedBufferAttribute, Loader, LoadingManager, Material, Mesh, MeshStandardMaterial, Object3D, SkinnedMesh, Texture } from 'three';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
-import { DRACOLoader } from './DRACOLoader';
-import { FileLoader } from './FileLoader';
-import { TextureLoader } from './TextureLoader';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { DRACOLoader } from './DRACOLoader.js';
+import { FileLoader } from './FileLoader.js';
+import { TextureLoader } from './TextureLoader.js';
 export interface GLTF {
     animations: AnimationClip[];
     scene: Group;

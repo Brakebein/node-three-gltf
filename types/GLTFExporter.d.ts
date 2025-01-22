@@ -1,5 +1,5 @@
 import { Object3D } from 'three';
-import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter';
+import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { Buffer } from 'node:buffer';
 declare class GLTFExporter {
     pluginCallbacks: any[];
