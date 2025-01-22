@@ -56,7 +56,7 @@
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.4",
     "@types/jsdom": "^20.0.0",
-    "@types/node-fetch": "^2.6.2",
+    "@types/node-fetch": "^2.6.12",
     "@types/three": "^0.156.0",
     "ava": "^4.3.1",
     "rimraf": "^3.0.2",
