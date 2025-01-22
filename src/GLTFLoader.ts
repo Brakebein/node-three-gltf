@@ -64,10 +64,10 @@ import {
 	Vector3,
 	VectorKeyframeTrack
 } from 'three';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
-import { DRACOLoader } from './DRACOLoader';
-import { FileLoader } from './FileLoader';
-import { TextureLoader } from './TextureLoader';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { DRACOLoader } from './DRACOLoader.js';
+import { FileLoader } from './FileLoader.js';
+import { TextureLoader } from './TextureLoader.js';
 
 type ExcludeFunctionProps<T> = Omit<T, { [K in keyof T]-?: T[K] extends Function ? K : never }[keyof T]>;
 

@@ -1,13 +1,13 @@
 import './polyfill';
-import { GLTF, GLTFLoader } from './GLTFLoader';
-import { DRACOLoader } from './DRACOLoader';
+import { GLTF, GLTFLoader } from './GLTFLoader.js';
+import { DRACOLoader } from './DRACOLoader.js';
 
-export * from './GLTFLoader';
-export * from './DRACOLoader';
-export * from './FileLoader';
-export * from './TextureLoader';
-export * from './ImageLoader';
-export * from './GLTFExporter';
+export * from './GLTFLoader.js';
+export * from './DRACOLoader.js';
+export * from './FileLoader.js';
+export * from './TextureLoader.js';
+export * from './ImageLoader.js';
+export * from './GLTFExporter.js';
 
 /**
  * Load (draco-compressed) gltf file from local file or web resource and decode/parse content.

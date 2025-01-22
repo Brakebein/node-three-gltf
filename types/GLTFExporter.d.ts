@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Object3D } from 'three';
 import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter';
 import { Buffer } from 'node:buffer';

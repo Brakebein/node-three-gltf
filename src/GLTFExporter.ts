@@ -26,8 +26,8 @@ import {
   Quaternion,
   REVISION, Object3D
 } from 'three';
-import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter';
-import { decompress } from 'three/examples/jsm/utils/TextureUtils';
+import { GLTFExporterOptions, GLTFExporterPlugin } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { decompress } from 'three/examples/jsm/utils/TextureUtils.js';
 import sharp from 'sharp';
 import { Buffer } from 'node:buffer';
 
