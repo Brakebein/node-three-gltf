@@ -1,4 +1,4 @@
-import './polyfill';
+import './polyfill.js';
 import { GLTF, GLTFLoader } from './GLTFLoader.js';
 import { DRACOLoader } from './DRACOLoader.js';
 
