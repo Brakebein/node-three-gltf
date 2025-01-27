@@ -1,5 +1,5 @@
 import { Loader, LoadingManager, Texture } from 'three';
-import { ImageLoader } from './ImageLoader.js';
+import { ImageLoader } from './ImageLoader';
 
 export class TextureLoader extends Loader {
 

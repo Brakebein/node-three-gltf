@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "module": "es2020",
+    "moduleResolution": "bundler",
     "target": "es2020",
     "sourceMap": true,
     "removeComments": false,
