@@ -1,7 +1,11 @@
-import test from 'ava';
+import test, { registerCompletionHandler } from 'ava';
 import { Buffer } from 'node:buffer';
 import { BufferGeometry, Mesh, Texture } from 'three';
 import { GLTFExporter, GLTFLoader, ImageLoader, loadGltf, TextureLoader } from '../build/index.js';
+
+registerCompletionHandler(() => {
+  process.exit();
+});
 
 test('load texture from remote', async (t) => {
 

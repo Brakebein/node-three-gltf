@@ -6,7 +6,7 @@ import {
 	BufferGeometry,
 	Loader, LoadingManager
 } from 'three';
-import { FileLoader } from './FileLoader.js';
+import { FileLoader } from './FileLoader';
 
 const _taskCache = new WeakMap();
 
