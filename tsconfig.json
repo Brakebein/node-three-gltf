@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "module": "es2020",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "es2020",
     "sourceMap": true,
     "removeComments": false,
     "allowSyntheticDefaultImports": true,
     "newLine": "lf",
+    "skipLibCheck": true,
     "lib": [
       "es2018"
     ]

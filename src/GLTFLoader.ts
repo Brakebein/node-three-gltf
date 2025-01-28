@@ -64,7 +64,7 @@ import {
 	Vector3,
 	VectorKeyframeTrack
 } from 'three';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { DRACOLoader } from './DRACOLoader';
 import { FileLoader } from './FileLoader';
 import { TextureLoader } from './TextureLoader';

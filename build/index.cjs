@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var jsdom = require('jsdom');
 var node_util = require('node:util');
 var node_buffer = require('node:buffer');
@@ -14,11 +12,7 @@ var base64Js = require('base64-js');
 var sharp = require('sharp');
 var node_worker_threads = require('node:worker_threads');
 
-function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-
-var fetch__default = /*#__PURE__*/_interopDefaultLegacy(fetch);
-var sharp__default = /*#__PURE__*/_interopDefaultLegacy(sharp);
-
+var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 const dom = new jsdom.JSDOM().window;
 if (!global.DOMParser) {
     global.DOMParser = dom.DOMParser;
@@ -93,7 +87,7 @@ class FileLoader extends three.Loader {
                 headers: new fetch.Headers(this.requestHeader),
                 credentials: this.withCredentials ? 'include' : 'same-origin',
             });
-            promise = fetch__default["default"](req)
+            promise = fetch(req)
                 .then(response => {
                 if (response.status === 200 || response.status === 0) {
                     if (response.status === 0) {
@@ -196,24 +190,24 @@ class ImageLoader extends three.Loader {
             if (/^blob:.*$/i.test(url)) {
                 const blob = node_buffer.resolveObjectURL(url);
                 const imageBuffer = node_buffer.Buffer.from(await blob.arrayBuffer());
-                return sharp__default["default"](imageBuffer);
+                return sharp(imageBuffer);
             }
             else if (/^data:/.test(url)) {
                 const base64 = url.split(';base64,').pop();
                 const imageBuffer = base64Js.toByteArray(base64);
-                return sharp__default["default"](imageBuffer);
+                return sharp(imageBuffer);
             }
             else if (/^https?:\/\//.test(url)) {
                 const req = new fetch.Request(url, {
                     headers: new fetch.Headers(this.requestHeader),
                     credentials: this.withCredentials ? 'include' : 'same-origin',
                 });
-                const response = await fetch__default["default"](req);
+                const response = await fetch(req);
                 const buffer = node_buffer.Buffer.from(await response.arrayBuffer());
-                return sharp__default["default"](buffer);
+                return sharp(buffer);
             }
             else {
-                return sharp__default["default"](url);
+                return sharp(url);
             }
         })
             .then(image => image
@@ -578,7 +572,7 @@ class GLTFLightsExtension {
         });
     }
 }
-class GLTFMaterialsUnlitExtension$1 {
+let GLTFMaterialsUnlitExtension$1 = class GLTFMaterialsUnlitExtension {
     constructor() {
         this.name = EXTENSIONS.KHR_MATERIALS_UNLIT;
     }
@@ -602,8 +596,8 @@ class GLTFMaterialsUnlitExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsEmissiveStrengthExtension$1 {
+};
+let GLTFMaterialsEmissiveStrengthExtension$1 = class GLTFMaterialsEmissiveStrengthExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_EMISSIVE_STRENGTH;
         this.parser = parser;
@@ -620,8 +614,8 @@ class GLTFMaterialsEmissiveStrengthExtension$1 {
         }
         return Promise.resolve();
     }
-}
-class GLTFMaterialsClearcoatExtension$1 {
+};
+let GLTFMaterialsClearcoatExtension$1 = class GLTFMaterialsClearcoatExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_CLEARCOAT;
         this.parser = parser;
@@ -662,8 +656,8 @@ class GLTFMaterialsClearcoatExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsSheenExtension$1 {
+};
+let GLTFMaterialsSheenExtension$1 = class GLTFMaterialsSheenExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_SHEEN;
         this.parser = parser;
@@ -701,8 +695,8 @@ class GLTFMaterialsSheenExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsTransmissionExtension$1 {
+};
+let GLTFMaterialsTransmissionExtension$1 = class GLTFMaterialsTransmissionExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_TRANSMISSION;
         this.parser = parser;
@@ -730,8 +724,8 @@ class GLTFMaterialsTransmissionExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsVolumeExtension$1 {
+};
+let GLTFMaterialsVolumeExtension$1 = class GLTFMaterialsVolumeExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_VOLUME;
         this.parser = parser;
@@ -760,8 +754,8 @@ class GLTFMaterialsVolumeExtension$1 {
         materialParams.attenuationColor = new three.Color().setRGB(colorArray[0], colorArray[1], colorArray[2], three.LinearSRGBColorSpace);
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsIorExtension$1 {
+};
+let GLTFMaterialsIorExtension$1 = class GLTFMaterialsIorExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_IOR;
         this.parser = parser;
@@ -783,8 +777,8 @@ class GLTFMaterialsIorExtension$1 {
         materialParams.ior = extension.ior !== undefined ? extension.ior : 1.5;
         return Promise.resolve();
     }
-}
-class GLTFMaterialsSpecularExtension$1 {
+};
+let GLTFMaterialsSpecularExtension$1 = class GLTFMaterialsSpecularExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_SPECULAR;
         this.parser = parser;
@@ -815,8 +809,8 @@ class GLTFMaterialsSpecularExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsAnisotropyExtension$1 {
+};
+let GLTFMaterialsAnisotropyExtension$1 = class GLTFMaterialsAnisotropyExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_ANISOTROPY;
         this.parser = parser;
@@ -847,7 +841,7 @@ class GLTFMaterialsAnisotropyExtension$1 {
         }
         return Promise.all(pending);
     }
-}
+};
 class GLTFTextureBasisUExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_TEXTURE_BASISU;
@@ -2436,7 +2430,7 @@ const _taskCache = new WeakMap();
 class DRACOLoader extends three.Loader {
     constructor(manager) {
         super(manager);
-        this.decoderPath = node_path.dirname(node_url.fileURLToPath((typeof document === 'undefined' ? new (require('u' + 'rl').URL)('file:' + __filename).href : (document.currentScript && document.currentScript.src || new URL('index.cjs', document.baseURI).href)))) + node_path.sep;
+        this.decoderPath = node_path.dirname(node_url.fileURLToPath((typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('index.cjs', document.baseURI).href)))) + node_path.sep;
         this.decoderConfig = {};
         this.decoderPending = null;
         this.workerLimit = 4;
@@ -3454,7 +3448,7 @@ class GLTFWriter {
                 if (image.width > options.maxTextureSize || image.height > options.maxTextureSize) {
                     console.warn('GLTFExporter: Image size is bigger than maxTextureSize', image);
                 }
-                imgSharp = sharp__default["default"](image.data, {
+                imgSharp = sharp(image.data, {
                     raw: {
                         width: Math.min(image.width, options.maxTextureSize),
                         height: Math.min(image.height, options.maxTextureSize),

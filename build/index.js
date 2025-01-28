@@ -569,7 +569,7 @@ class GLTFLightsExtension {
         });
     }
 }
-class GLTFMaterialsUnlitExtension$1 {
+let GLTFMaterialsUnlitExtension$1 = class GLTFMaterialsUnlitExtension {
     constructor() {
         this.name = EXTENSIONS.KHR_MATERIALS_UNLIT;
     }
@@ -593,8 +593,8 @@ class GLTFMaterialsUnlitExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsEmissiveStrengthExtension$1 {
+};
+let GLTFMaterialsEmissiveStrengthExtension$1 = class GLTFMaterialsEmissiveStrengthExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_EMISSIVE_STRENGTH;
         this.parser = parser;
@@ -611,8 +611,8 @@ class GLTFMaterialsEmissiveStrengthExtension$1 {
         }
         return Promise.resolve();
     }
-}
-class GLTFMaterialsClearcoatExtension$1 {
+};
+let GLTFMaterialsClearcoatExtension$1 = class GLTFMaterialsClearcoatExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_CLEARCOAT;
         this.parser = parser;
@@ -653,8 +653,8 @@ class GLTFMaterialsClearcoatExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsSheenExtension$1 {
+};
+let GLTFMaterialsSheenExtension$1 = class GLTFMaterialsSheenExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_SHEEN;
         this.parser = parser;
@@ -692,8 +692,8 @@ class GLTFMaterialsSheenExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsTransmissionExtension$1 {
+};
+let GLTFMaterialsTransmissionExtension$1 = class GLTFMaterialsTransmissionExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_TRANSMISSION;
         this.parser = parser;
@@ -721,8 +721,8 @@ class GLTFMaterialsTransmissionExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsVolumeExtension$1 {
+};
+let GLTFMaterialsVolumeExtension$1 = class GLTFMaterialsVolumeExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_VOLUME;
         this.parser = parser;
@@ -751,8 +751,8 @@ class GLTFMaterialsVolumeExtension$1 {
         materialParams.attenuationColor = new Color().setRGB(colorArray[0], colorArray[1], colorArray[2], LinearSRGBColorSpace);
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsIorExtension$1 {
+};
+let GLTFMaterialsIorExtension$1 = class GLTFMaterialsIorExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_IOR;
         this.parser = parser;
@@ -774,8 +774,8 @@ class GLTFMaterialsIorExtension$1 {
         materialParams.ior = extension.ior !== undefined ? extension.ior : 1.5;
         return Promise.resolve();
     }
-}
-class GLTFMaterialsSpecularExtension$1 {
+};
+let GLTFMaterialsSpecularExtension$1 = class GLTFMaterialsSpecularExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_SPECULAR;
         this.parser = parser;
@@ -806,8 +806,8 @@ class GLTFMaterialsSpecularExtension$1 {
         }
         return Promise.all(pending);
     }
-}
-class GLTFMaterialsAnisotropyExtension$1 {
+};
+let GLTFMaterialsAnisotropyExtension$1 = class GLTFMaterialsAnisotropyExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_MATERIALS_ANISOTROPY;
         this.parser = parser;
@@ -838,7 +838,7 @@ class GLTFMaterialsAnisotropyExtension$1 {
         }
         return Promise.all(pending);
     }
-}
+};
 class GLTFTextureBasisUExtension {
     constructor(parser) {
         this.name = EXTENSIONS.KHR_TEXTURE_BASISU;
