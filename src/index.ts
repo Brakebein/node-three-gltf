@@ -16,12 +16,17 @@ export * from './GLTFExporter';
 export async function loadGltf(url: string): Promise<GLTF> {
 
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(new DRACOLoader());
+  const dracoLoader = new DRACOLoader();
+  loader.setDRACOLoader(dracoLoader);
 
-  return new Promise<GLTF>((resolve, reject) => {
+  try {
 
-    loader.load(url, resolve, null, reject);
+    return await loader.loadAsync(url);
 
-  });
+  } finally {
+
+    dracoLoader.dispose();
+
+  }
 
 }

@@ -1,7 +1,7 @@
 import { Loader, LoadingManager, Texture } from 'three';
 import { ImageLoader } from './ImageLoader';
 
-export class TextureLoader extends Loader {
+export class TextureLoader extends Loader<Texture> {
 
 	constructor( manager?: LoadingManager ) {
 

@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import fetch, { Headers, Request } from 'node-fetch';
 import { toByteArray } from 'base64-js';
 
-export class ImageLoader extends Loader {
+export class ImageLoader extends Loader<ArrayBuffer> {
 
 	constructor( manager?: LoadingManager ) {
 

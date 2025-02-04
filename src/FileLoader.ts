@@ -10,7 +10,7 @@ const loading: {
     onError?: (err: Error) => void
   }[]} = {};
 
-export class FileLoader extends Loader {
+export class FileLoader extends Loader<string | ArrayBuffer> {
 
   mimeType: string;
   responseType: string;

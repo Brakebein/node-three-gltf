@@ -103,7 +103,7 @@ export interface GLTFLoaderPlugin {
 	createNodeAttachment?: ((nodeIndex: number) => Promise<Object3D> | null) | undefined;
 }
 
-export class GLTFLoader extends Loader {
+export class GLTFLoader extends Loader<GLTF> {
 
 	static LOG_TEXTURE_LOAD_ERROR = true;
 

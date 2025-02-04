@@ -10,7 +10,7 @@ import { FileLoader } from './FileLoader';
 
 const _taskCache = new WeakMap();
 
-export class DRACOLoader extends Loader {
+export class DRACOLoader extends Loader<BufferGeometry> {
 
 	decoderPath = dirname(fileURLToPath(import.meta.url)) + sep;
 	decoderConfig: { [key: string]: any } = {};

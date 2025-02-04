@@ -51,9 +51,7 @@ function checkObject(t, object) {
 test('load binary gltf with GLTFLoader', async (t) => {
 
   const loader = new GLTFLoader();
-  const gltf = await new Promise((resolve, reject) => {
-    loader.load('test/knot-binary.glb', resolve, null, reject);
-  });
+  const gltf = await loader.loadAsync('test/knot-binary.glb');
   checkObject(t, gltf.scene.children[0].children[0]);
 
 });
@@ -61,9 +59,7 @@ test('load binary gltf with GLTFLoader', async (t) => {
 test('load gltf with separate texture and bin file', async (t) => {
 
   const loader = new GLTFLoader();
-  const gltf = await new Promise((resolve, reject) => {
-    loader.load('test/knot-separate.gltf', resolve, null, reject);
-  });
+  const gltf = await loader.loadAsync('test/knot-separate.gltf');
   checkObject(t, gltf.scene.children[0].children[0]);
 
 });
@@ -78,9 +74,7 @@ test('load gltf with embedded texture', async (t) => {
 test('load gltf from remote', async (t) => {
 
   const loader = new GLTFLoader();
-  const gltf = await new Promise((resolve, reject) => {
-    loader.load('https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/knot-embed.gltf', resolve, null, reject);
-  });
+  const gltf = await loader.loadAsync('https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/knot-embed.gltf');
   checkObject(t, gltf.scene.children[0].children[0]);
 
 });
@@ -88,9 +82,7 @@ test('load gltf from remote', async (t) => {
 test('load gltf with separate texture and bin file from remote', async (t) => {
 
   const loader = new GLTFLoader();
-  const gltf = await new Promise((resolve, reject) => {
-    loader.load('https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/knot-separate.gltf', resolve, null, reject);
-  });
+  const gltf = await loader.loadAsync('https://raw.githubusercontent.com/Brakebein/node-three-gltf/main/test/knot-separate.gltf');
   checkObject(t, gltf.scene.children[0].children[0]);
 
 });
