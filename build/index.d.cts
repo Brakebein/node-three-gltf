@@ -1,9 +1,9 @@
 import { Buffer } from 'node:buffer';
-import { Loader, LoadingManager, BufferGeometry, Texture, AnimationClip, Group, Camera, Mesh, SkinnedMesh, Material, Object3D, BufferAttribute, InterleavedBufferAttribute, MeshStandardMaterial } from 'three';
+import { Loader, BufferGeometry, LoadingManager, Texture, AnimationClip, Group, Camera, Mesh, SkinnedMesh, Material, Object3D, BufferAttribute, InterleavedBufferAttribute, MeshStandardMaterial } from 'three';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GLTFExporterPlugin, GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
-declare class DRACOLoader extends Loader {
+declare class DRACOLoader extends Loader<BufferGeometry> {
     decoderPath: string;
     decoderConfig: {
         [key: string]: any;
@@ -40,7 +40,7 @@ declare class DRACOLoader extends Loader {
     dispose(): this;
 }
 
-declare class FileLoader extends Loader {
+declare class FileLoader extends Loader<string | ArrayBuffer> {
     mimeType: string;
     responseType: string;
     constructor(manager?: LoadingManager);
@@ -49,7 +49,7 @@ declare class FileLoader extends Loader {
     setMimeType(value: string): FileLoader;
 }
 
-declare class TextureLoader extends Loader {
+declare class TextureLoader extends Loader<Texture> {
     constructor(manager?: LoadingManager);
     load(url: string, onLoad?: (texture: Texture) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void): Texture;
 }
@@ -84,7 +84,7 @@ interface GLTFLoaderPlugin {
     createNodeMesh?: ((nodeIndex: number) => Promise<Group | Mesh | SkinnedMesh> | null) | undefined;
     createNodeAttachment?: ((nodeIndex: number) => Promise<Object3D> | null) | undefined;
 }
-declare class GLTFLoader extends Loader {
+declare class GLTFLoader extends Loader<GLTF> {
     static LOG_TEXTURE_LOAD_ERROR: boolean;
     dracoLoader: DRACOLoader;
     ktx2Loader: any;
@@ -251,7 +251,7 @@ declare class GLTFParser {
     loadScene(sceneIndex: number): Promise<Group>;
 }
 
-declare class ImageLoader extends Loader {
+declare class ImageLoader extends Loader<ArrayBuffer> {
     constructor(manager?: LoadingManager);
     load(url: string, onLoad?: (image: ArrayBuffer) => void, onProgress?: (event: ProgressEvent) => void, onError?: (err: Error) => void): void;
 }

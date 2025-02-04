@@ -49,7 +49,7 @@ loader.setDRACOLoader(dracoLoader);
 const gltf = await loader.loadAsync('path/to/file');
 console.log(gltf.scene.children);
 
-// dispose dracoLoader after usage to terminate Web Workers
+// dispose dracoLoader after usage to terminate workers
 dracoLoader.dispose();
 ```
 

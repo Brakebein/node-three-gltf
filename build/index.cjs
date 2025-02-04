@@ -4507,10 +4507,14 @@ class GLTFMeshGpuInstancing {
 
 async function loadGltf(url) {
     const loader = new GLTFLoader();
-    loader.setDRACOLoader(new DRACOLoader());
-    return new Promise((resolve, reject) => {
-        loader.load(url, resolve, null, reject);
-    });
+    const dracoLoader = new DRACOLoader();
+    loader.setDRACOLoader(dracoLoader);
+    try {
+        return await loader.loadAsync(url);
+    }
+    finally {
+        dracoLoader.dispose();
+    }
 }
 
 exports.DRACOLoader = DRACOLoader;
