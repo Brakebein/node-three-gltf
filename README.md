@@ -16,7 +16,7 @@ In order to work in a non-browser environment, following classes had to be adopt
 
 All are exposed and can be used independently.
 
-## Usage
+## Installation
 
 Install via NPM:
 
@@ -24,25 +24,45 @@ Install via NPM:
 npm install node-three-gltf
 ```
 
+## Usage
+
 Use with ES modules or TypeScript:
 
 ```typescript
-import { DRACOLoader, GLTFExporter, GLTFLoader, loadGltf, TextureLoader } from 'node-three-gltf';
+import {
+  DRACOLoader,
+  FileLoader,
+  GLTFExporter,
+  GLTFLoader,
+  ImageLoader,
+  loadGltf,
+  TextureLoader,
+} from 'node-three-gltf';
+```
 
-// init GLTFLoader and pass a path to a local file or a url to a web resource
+Init `GLTFLoader` and pass a path to a local file or a url to a web resource:
+```typescript
 const loader = new GLTFLoader();
-loader.setDRACOLoader(new DRACOLoader());
+const dracoLoader = new DRACOLoader();
+loader.setDRACOLoader(dracoLoader);
 
-loader.load('path/to/file', (gltf) => {
-  console.log(gltf.scene.children);
-});
-
-// there is also a small utility function that instantiates GLTFLoader and DRACOLoader
-// and returns a Promise with the loaded content
-const gltf = await loadGltf('path/to/file');
+const gltf = await loader.loadAsync('path/to/file');
 console.log(gltf.scene.children);
 
-// use GLTFExporter to export a scene or objects as json .gltf or binary .glb file
+// dispose dracoLoader after usage to terminate Web Workers
+dracoLoader.dispose();
+```
+
+A small utility function instantiates `GLTFLoader` and `DRACOLoader`
+and returns a Promise with the loaded content.
+It finally disposes the DRACO decoder resources.
+```typescript
+const gltf = await loadGltf('path/to/file');
+console.log(gltf.scene.children);
+```
+
+Use `GLTFExporter` to export a scene or objects as json .gltf or binary .glb file:
+```typescript
 const exporter = new GLTFExporter();
 
 const jsonData = exporter.parseAsync(scene);
@@ -50,9 +70,10 @@ fs.writeJson('export.gltf', jsonData, { spaces: 2 });
 
 const glbBuffer = await exporter.parseAsync(scene, { binary: true });
 fs.writeFile('export.glb', glbBuffer);
+```
 
-// use TextureLoader, ImageLoader, or FileLoader independently
-new TextureLoader().load('path/to/file', (texture) => {
-  console.log(texture);
-});
+Use `TextureLoader`, `ImageLoader`, or `FileLoader` independently:
+```typescript
+const texture = new TextureLoader().loadAsync('path/to/file');
+console.log(texture);
 ```
