@@ -263,6 +263,8 @@ const GLTFExporterUtils = {
 
 class GLTFExporter {
 
+  static LOG_MATERIAL_WARNING = true;
+
   pluginCallbacks = [];
 
   static Utils = GLTFExporterUtils;
@@ -1618,7 +1620,9 @@ class GLTFWriter {
 
     if ( material.isMeshStandardMaterial !== true && material.isMeshBasicMaterial !== true ) {
 
-      console.warn( 'GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.' );
+      if ( GLTFExporter.LOG_MATERIAL_WARNING ) {
+        console.warn( 'GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.' );
+      }
 
     }
 
