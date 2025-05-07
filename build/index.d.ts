@@ -257,6 +257,7 @@ declare class ImageLoader extends Loader<ArrayBuffer> {
 }
 
 declare class GLTFExporter {
+    static LOG_MATERIAL_WARNING: boolean;
     pluginCallbacks: any[];
     static Utils: {
         insertKeyframe: (track: any, time: any) => any;

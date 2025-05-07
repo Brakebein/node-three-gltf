@@ -2894,6 +2894,7 @@ class GLTFExporter {
         });
     }
 }
+GLTFExporter.LOG_MATERIAL_WARNING = true;
 GLTFExporter.Utils = GLTFExporterUtils;
 const WEBGL_CONSTANTS = {
     POINTS: 0x0000,
@@ -3532,7 +3533,9 @@ class GLTFWriter {
             json.materials = [];
         const materialDef = { pbrMetallicRoughness: {} };
         if (material.isMeshStandardMaterial !== true && material.isMeshBasicMaterial !== true) {
-            console.warn('GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.');
+            if (GLTFExporter.LOG_MATERIAL_WARNING) {
+                console.warn('GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.');
+            }
         }
         const color = material.color.toArray().concat([material.opacity]);
         if (!equalArray(color, [1, 1, 1, 1])) {
